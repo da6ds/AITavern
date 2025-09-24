@@ -6,11 +6,7 @@ import express, {
 } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-
-// Mechanics boundary: pick the active rules system at runtime
-import { makeEngine } from "../shared/rules/index.ts";
-const engine = makeEngine((process.env.GAME_SYSTEM as any) || "dnd5e");
-export { engine };
+// (no engine import/export here anymore)
 
 const app = express();
 app.use(express.json());

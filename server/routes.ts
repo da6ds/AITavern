@@ -1,13 +1,4 @@
-// Simple mechanics functions to replace missing mechanics.ts
-function abilityCheck({ actorId, skill, difficulty }: { actorId: string, skill: string, difficulty: number }) {
-  const roll = Math.floor(Math.random() * 20) + 1;
-  return { success: roll >= difficulty, result: roll };
-}
-
-function damageRoll(formula: string) {
-  // Simple implementation for 2d6+1
-  return Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 + 1;
-}
+import { abilityCheck, damageRoll } from "./mechanics.ts";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { randomUUID } from "crypto";
@@ -236,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { appearance, name } = result.data;
-      
+
       try {
         const portraitUrl = await aiService.generateCharacterPortrait(
           name,
@@ -245,17 +236,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({ url: portraitUrl });
       } catch (aiError: any) {
         console.error("AI portrait generation failed:", aiError);
-        
+
         // Return graceful degradation - let the frontend handle the missing portrait
-        res.json({ 
+        res.json({
           url: null,
-          error: "Portrait generation temporarily unavailable. You can continue without a portrait and add one later.",
-          fallback: true 
+          error:
+            "Portrait generation temporarily unavailable. You can continue without a portrait and add one later.",
+          fallback: true,
         });
       }
     } catch (error) {
       console.error("Error in portrait generation endpoint:", error);
-      res.status(500).json({ error: "Portrait generation service unavailable" });
+      res
+        .status(500)
+        .json({ error: "Portrait generation service unavailable" });
     }
   });
 
@@ -812,12 +806,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiResponse = await aiService.generateResponse(message);
       } catch (aiError: any) {
         console.error("AI response generation failed:", aiError);
-        
+
         // Provide a fallback response when AI is unavailable
         aiResponse = {
-          content: "The Dungeon Master seems distracted by mystical forces and doesn't respond clearly. The adventure continues, but the AI storytelling is temporarily unavailable.",
-          sender: 'dm' as const,
-          senderName: null
+          content:
+            "The Dungeon Master seems distracted by mystical forces and doesn't respond clearly. The adventure continues, but the AI storytelling is temporarily unavailable.",
+          sender: "dm" as const,
+          senderName: null,
         };
       }
 
