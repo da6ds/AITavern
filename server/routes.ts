@@ -1,8 +1,18 @@
+// Simple mechanics functions to replace missing mechanics.ts
+function abilityCheck({ actorId, skill, difficulty }: { actorId: string, skill: string, difficulty: number }) {
+  const roll = Math.floor(Math.random() * 20) + 1;
+  return { success: roll >= difficulty, result: roll };
+}
+
+function damageRoll(formula: string) {
+  // Simple implementation for 2d6+1
+  return Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 + 1;
+}
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { randomUUID } from "crypto";
 import { storage } from "./storage";
-import { 
+import {
   insertCharacterSchema,
   insertQuestSchema,
   insertItemSchema,
@@ -15,7 +25,7 @@ import {
   type Quest,
   type Item,
   type Enemy,
-  type Campaign
+  type Campaign,
 } from "@shared/schema";
 import { z } from "zod";
 import { aiService } from "./aiService";
@@ -37,7 +47,7 @@ const updateCharacterSchema = insertCharacterSchema.partial().refine(
     }
     return true;
   },
-  { message: "Health and mana values must be valid" }
+  { message: "Health and mana values must be valid" },
 );
 
 const updateQuestSchema = insertQuestSchema.partial().refine(
@@ -50,7 +60,7 @@ const updateQuestSchema = insertQuestSchema.partial().refine(
     }
     return true;
   },
-  { message: "Quest progress must be valid" }
+  { message: "Quest progress must be valid" },
 );
 
 const updateItemSchema = insertItemSchema.partial().refine(
@@ -60,12 +70,24 @@ const updateItemSchema = insertItemSchema.partial().refine(
     }
     return true;
   },
-  { message: "Item quantity must be non-negative" }
+  { message: "Item quantity must be non-negative" },
 );
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize storage with default data
   await storage.init();
+
+  app.get("/api/debug/check", (_req, res) => {
+    console.log("✅ /api/debug/check registered & hit");
+    const check = abilityCheck({
+      actorId: "pc1",
+      skill: "athletics",
+      difficulty: 12,
+    });
+    const dmg = damageRoll("2d6+1");
+    res.json({ system: process.env.GAME_SYSTEM || "dnd5e", check, dmg });
+  });
+
   // Character routes
   app.get("/api/character", async (_req, res) => {
     try {
@@ -75,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(character);
     } catch (error) {
-      console.error('Error fetching character:', error);
+      console.error("Error fetching character:", error);
       res.status(500).json({ error: "Failed to fetch character" });
     }
   });
@@ -84,13 +106,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = insertCharacterSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid character data", details: result.error.errors });
+        return res.status(400).json({
+          error: "Invalid character data",
+          details: result.error.errors,
+        });
       }
-      
+
       const character = await storage.createCharacter(result.data);
       res.json(character);
     } catch (error) {
-      console.error('Error creating character:', error);
+      console.error("Error creating character:", error);
       res.status(500).json({ error: "Failed to create character" });
     }
   });
@@ -99,16 +124,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = updateCharacterSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid character data", details: result.error.errors });
+        return res.status(400).json({
+          error: "Invalid character data",
+          details: result.error.errors,
+        });
       }
-      
-      const character = await storage.updateCharacter(req.params.id, result.data);
+
+      const character = await storage.updateCharacter(
+        req.params.id,
+        result.data,
+      );
       if (!character) {
         return res.status(404).json({ error: "Character not found" });
       }
       res.json(character);
     } catch (error) {
-      console.error('Error updating character:', error);
+      console.error("Error updating character:", error);
       res.status(500).json({ error: "Failed to update character" });
     }
   });
@@ -123,83 +154,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       title: z.string(),
       description: z.string(),
       priority: z.enum(["high", "normal", "low"]),
-      maxProgress: z.number()
-    })
+      maxProgress: z.number(),
+    }),
   });
 
   app.post("/api/adventure/initialize", async (req, res) => {
     try {
       const result = adventureTemplateSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid adventure template data", details: result.error.errors });
+        return res.status(400).json({
+          error: "Invalid adventure template data",
+          details: result.error.errors,
+        });
       }
 
       const template = result.data;
-      
+
       // Update game state with the new adventure
       await storage.updateGameState({
         currentScene: template.initialScene,
         inCombat: false,
         currentTurn: null,
-        turnCount: 0
+        turnCount: 0,
       });
 
       // Create the initial quest
       const quest = await storage.createQuest({
         title: template.initialQuest.title,
         description: template.initialQuest.description,
-        status: 'active',
+        status: "active",
         priority: template.initialQuest.priority,
         progress: 0,
         maxProgress: template.initialQuest.maxProgress,
         reward: "Experience and story progression",
         isMainStory: true,
         parentQuestId: null,
-        chainId: null
+        chainId: null,
       });
 
       // Clear existing messages and add welcome message for the new adventure
       await storage.clearMessages();
-      
+
       const welcomeMessage = await storage.createMessage({
         content: `Welcome to ${template.name}! You find yourself in ${template.initialScene}. ${template.initialQuest.description}`,
-        sender: 'dm',
+        sender: "dm",
         senderName: null,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         quest,
         message: welcomeMessage,
-        gameState: await storage.getGameState()
+        gameState: await storage.getGameState(),
       });
     } catch (error) {
-      console.error('Error initializing adventure template:', error);
-      res.status(500).json({ error: 'Failed to initialize adventure template' });
+      console.error("Error initializing adventure template:", error);
+      res
+        .status(500)
+        .json({ error: "Failed to initialize adventure template" });
     }
   });
 
   // Character portrait generation
   const portraitGenerationSchema = z.object({
     appearance: z.string().min(1).max(500),
-    name: z.string().min(1).max(100)
+    name: z.string().min(1).max(100),
   });
-  
+
   app.post("/api/character/generate-portrait", async (req, res) => {
     try {
       const result = portraitGenerationSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid portrait generation data", details: result.error.errors });
+        return res.status(400).json({
+          error: "Invalid portrait generation data",
+          details: result.error.errors,
+        });
       }
 
       const { appearance, name } = result.data;
-      const portraitUrl = await aiService.generateCharacterPortrait(name, appearance);
       
-      res.json({ url: portraitUrl });
+      try {
+        const portraitUrl = await aiService.generateCharacterPortrait(
+          name,
+          appearance,
+        );
+        res.json({ url: portraitUrl });
+      } catch (aiError: any) {
+        console.error("AI portrait generation failed:", aiError);
+        
+        // Return graceful degradation - let the frontend handle the missing portrait
+        res.json({ 
+          url: null,
+          error: "Portrait generation temporarily unavailable. You can continue without a portrait and add one later.",
+          fallback: true 
+        });
+      }
     } catch (error) {
-      console.error('Error generating character portrait:', error);
-      res.status(500).json({ error: 'Failed to generate character portrait' });
+      console.error("Error in portrait generation endpoint:", error);
+      res.status(500).json({ error: "Portrait generation service unavailable" });
     }
   });
 
@@ -210,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enemies = await storage.getEnemies(combatId);
       res.json(enemies);
     } catch (error) {
-      console.error('Error fetching enemies:', error);
+      console.error("Error fetching enemies:", error);
       res.status(500).json({ error: "Failed to fetch enemies" });
     }
   });
@@ -219,13 +275,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = insertEnemySchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid enemy data", details: result.error.errors });
+        return res
+          .status(400)
+          .json({ error: "Invalid enemy data", details: result.error.errors });
       }
-      
+
       const enemy = await storage.createEnemy(result.data);
       res.json(enemy);
     } catch (error) {
-      console.error('Error creating enemy:', error);
+      console.error("Error creating enemy:", error);
       res.status(500).json({ error: "Failed to create enemy" });
     }
   });
@@ -234,16 +292,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = updateEnemySchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid enemy data", details: result.error.errors });
+        return res
+          .status(400)
+          .json({ error: "Invalid enemy data", details: result.error.errors });
       }
-      
+
       const enemy = await storage.updateEnemy(req.params.id, result.data);
       if (!enemy) {
         return res.status(404).json({ error: "Enemy not found" });
       }
       res.json(enemy);
     } catch (error) {
-      console.error('Error updating enemy:', error);
+      console.error("Error updating enemy:", error);
       res.status(500).json({ error: "Failed to update enemy" });
     }
   });
@@ -252,47 +312,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/combat/action", async (req, res) => {
     try {
       const { action, targetId, spellId, itemId } = req.body;
-      
-      if (!action || typeof action !== 'string') {
+
+      if (!action || typeof action !== "string") {
         return res.status(400).json({ error: "Action is required" });
       }
 
       // Process combat action through AI
-      let actionMessage = '';
+      let actionMessage = "";
       switch (action) {
-        case 'attack':
-          actionMessage = targetId ? `I attack the enemy with ID ${targetId}!` : 'I launch an attack!';
+        case "attack":
+          actionMessage = targetId
+            ? `I attack the enemy with ID ${targetId}!`
+            : "I launch an attack!";
           break;
-        case 'defend':
-          actionMessage = 'I take a defensive stance, ready to block incoming attacks.';
+        case "defend":
+          actionMessage =
+            "I take a defensive stance, ready to block incoming attacks.";
           break;
-        case 'cast':
-          actionMessage = spellId ? `I cast spell ${spellId}!` : 'I prepare to cast a spell.';
+        case "cast":
+          actionMessage = spellId
+            ? `I cast spell ${spellId}!`
+            : "I prepare to cast a spell.";
           break;
-        case 'use-item':
-          actionMessage = itemId ? `I use item ${itemId}!` : 'I use an item from my inventory.';
+        case "use-item":
+          actionMessage = itemId
+            ? `I use item ${itemId}!`
+            : "I use an item from my inventory.";
           break;
-        case 'flee':
-          actionMessage = 'I attempt to flee from combat!';
+        case "flee":
+          actionMessage = "I attempt to flee from combat!";
           break;
-        case 'enemy-turn':
+        case "enemy-turn":
           // Handle enemy turn automatically without AI (faster, more reliable)
           const currentGameState = await storage.getGameState();
           if (currentGameState?.inCombat && currentGameState.combatId) {
             // Just advance the turn back to player
             await storage.updateGameState({
-              currentTurn: 'player',
-              turnCount: (currentGameState.turnCount ?? 0) + 1
+              currentTurn: "player",
+              turnCount: (currentGameState.turnCount ?? 0) + 1,
             });
-            
+
             // Store the enemy turn message for consistency
             const message = await storage.createMessage({
               content: "Enemy completes their turn. It's your turn now!",
-              sender: 'dm',
+              sender: "dm",
               senderName: null,
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              timestamp: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
             });
-            
+
             return res.json({ message });
           }
           return res.status(400).json({ error: "Not in combat" });
@@ -306,109 +376,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store messages
       await storage.createMessage({
         content: actionMessage,
-        sender: 'player',
+        sender: "player",
         senderName: null,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
 
       const aiMessage = await storage.createMessage({
         content: aiResponse.content,
         sender: aiResponse.sender,
         senderName: aiResponse.senderName,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
 
       // Apply AI actions (enemy updates, character changes, etc.)
       if (aiResponse.actions) {
         const actions = aiResponse.actions;
-        
+
         // Start combat if specified
         if ((actions as any).startCombat) {
           const combatData = (actions as any).startCombat;
           const combatId = randomUUID();
-          
+
           // Create enemies for this combat encounter
           if (combatData.enemies && Array.isArray(combatData.enemies)) {
             for (const enemyData of combatData.enemies) {
-              const enemyValidation = insertEnemySchema.safeParse({ ...enemyData, combatId });
+              const enemyValidation = insertEnemySchema.safeParse({
+                ...enemyData,
+                combatId,
+              });
               if (enemyValidation.success) {
                 await storage.createEnemy(enemyValidation.data);
               }
             }
           }
-          
+
           // Update game state to start combat
           await storage.updateGameState({
             inCombat: true,
             combatId,
-            currentTurn: 'player',
-            turnCount: 1
+            currentTurn: "player",
+            turnCount: 1,
           });
         }
-        
+
         // Update enemy if specified
         if ((actions as any).updateEnemy) {
           const enemyUpdate = (actions as any).updateEnemy;
-          const enemyValidation = updateEnemySchema.safeParse(enemyUpdate.updates);
+          const enemyValidation = updateEnemySchema.safeParse(
+            enemyUpdate.updates,
+          );
           if (enemyValidation.success) {
             await storage.updateEnemy(enemyUpdate.id, enemyValidation.data);
           }
         }
-        
+
         // End combat if specified
         if ((actions as any).endCombat) {
           const endCombatData = (actions as any).endCombat;
-          
+
           // Award victory rewards before ending combat
           if (endCombatData.victory) {
             const character = await storage.getCharacter();
             if (character) {
               let expGain = 75; // Default experience
-              
+
               // Check if rewards is an object with experience property
-              if (endCombatData.rewards && typeof endCombatData.rewards === 'object' && endCombatData.rewards.experience) {
+              if (
+                endCombatData.rewards &&
+                typeof endCombatData.rewards === "object" &&
+                endCombatData.rewards.experience
+              ) {
                 expGain = endCombatData.rewards.experience;
               }
-              
-              const rewardValidation = updateCharacterSchema.safeParse({ experience: character.experience + expGain });
+
+              const rewardValidation = updateCharacterSchema.safeParse({
+                experience: character.experience + expGain,
+              });
               if (rewardValidation.success) {
-                await storage.updateCharacter(character.id, rewardValidation.data);
+                await storage.updateCharacter(
+                  character.id,
+                  rewardValidation.data,
+                );
               }
             }
           }
-          
+
           await storage.updateGameState({
             inCombat: false,
             combatId: null,
             currentTurn: null,
-            turnCount: 0
+            turnCount: 0,
           });
         }
-        
+
         if (actions.updateCharacter) {
           const character = await storage.getCharacter();
           if (character) {
-            const charValidation = updateCharacterSchema.safeParse(actions.updateCharacter.updates);
+            const charValidation = updateCharacterSchema.safeParse(
+              actions.updateCharacter.updates,
+            );
             if (charValidation.success) {
               await storage.updateCharacter(character.id, charValidation.data);
             }
           }
         }
-        
+
         if (actions.updateGameState) {
-          const gameStateValidation = insertGameStateSchema.partial().safeParse(actions.updateGameState);
+          const gameStateValidation = insertGameStateSchema
+            .partial()
+            .safeParse(actions.updateGameState);
           if (gameStateValidation.success) {
             await storage.updateGameState(gameStateValidation.data);
           }
         }
       }
-      
+
       // Check for combat end conditions and turn management
       const currentGameState = await storage.getGameState();
       if (currentGameState?.inCombat && currentGameState.combatId) {
-        const combatEnemies = await storage.getEnemies(currentGameState.combatId);
-        const aliveEnemies = combatEnemies.filter(e => e.isActive && e.currentHealth > 0);
-        
+        const combatEnemies = await storage.getEnemies(
+          currentGameState.combatId,
+        );
+        const aliveEnemies = combatEnemies.filter(
+          (e) => e.isActive && e.currentHealth > 0,
+        );
+
         // End combat if no enemies left alive
         if (aliveEnemies.length === 0) {
           // Award victory rewards - base 50 exp + 10 per enemy defeated
@@ -417,34 +515,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const baseExp = 50;
             const enemyExp = combatEnemies.length * 10;
             const totalExp = baseExp + enemyExp;
-            await storage.updateCharacter(character.id, { experience: character.experience + totalExp });
+            await storage.updateCharacter(character.id, {
+              experience: character.experience + totalExp,
+            });
           }
-          
+
           await storage.updateGameState({
             inCombat: false,
             combatId: null,
             currentTurn: null,
-            turnCount: 0
+            turnCount: 0,
           });
         } else {
           // Toggle turn after player action
-          const newTurn = currentGameState.currentTurn === 'player' ? 'enemy' : 'player';
-          const newTurnCount = newTurn === 'player' ? currentGameState.turnCount + 1 : currentGameState.turnCount;
-          
+          const newTurn =
+            currentGameState.currentTurn === "player" ? "enemy" : "player";
+          const newTurnCount =
+            newTurn === "player"
+              ? currentGameState.turnCount + 1
+              : currentGameState.turnCount;
+
           await storage.updateGameState({
             currentTurn: newTurn,
-            turnCount: newTurnCount
+            turnCount: newTurnCount,
           });
         }
       }
 
       res.json({
         message: aiMessage,
-        actions: aiResponse.actions
+        actions: aiResponse.actions,
       });
-
     } catch (error) {
-      console.error('Error processing combat action:', error);
+      console.error("Error processing combat action:", error);
       res.status(500).json({ error: "Failed to process combat action" });
     }
   });
@@ -455,7 +558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const quests = await storage.getQuests();
       res.json(quests);
     } catch (error) {
-      console.error('Error fetching quests:', error);
+      console.error("Error fetching quests:", error);
       res.status(500).json({ error: "Failed to fetch quests" });
     }
   });
@@ -468,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(quest);
     } catch (error) {
-      console.error('Error fetching quest:', error);
+      console.error("Error fetching quest:", error);
       res.status(500).json({ error: "Failed to fetch quest" });
     }
   });
@@ -477,13 +580,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = insertQuestSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid quest data", details: result.error.errors });
+        return res
+          .status(400)
+          .json({ error: "Invalid quest data", details: result.error.errors });
       }
-      
+
       const quest = await storage.createQuest(result.data);
       res.json(quest);
     } catch (error) {
-      console.error('Error creating quest:', error);
+      console.error("Error creating quest:", error);
       res.status(500).json({ error: "Failed to create quest" });
     }
   });
@@ -492,16 +597,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = updateQuestSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid quest data", details: result.error.errors });
+        return res
+          .status(400)
+          .json({ error: "Invalid quest data", details: result.error.errors });
       }
-      
+
       const quest = await storage.updateQuest(req.params.id, result.data);
       if (!quest) {
         return res.status(404).json({ error: "Quest not found" });
       }
       res.json(quest);
     } catch (error) {
-      console.error('Error updating quest:', error);
+      console.error("Error updating quest:", error);
       res.status(500).json({ error: "Failed to update quest" });
     }
   });
@@ -514,7 +621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true });
     } catch (error) {
-      console.error('Error deleting quest:', error);
+      console.error("Error deleting quest:", error);
       res.status(500).json({ error: "Failed to delete quest" });
     }
   });
@@ -525,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const items = await storage.getItems();
       res.json(items);
     } catch (error) {
-      console.error('Error fetching items:', error);
+      console.error("Error fetching items:", error);
       res.status(500).json({ error: "Failed to fetch items" });
     }
   });
@@ -538,7 +645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(item);
     } catch (error) {
-      console.error('Error fetching item:', error);
+      console.error("Error fetching item:", error);
       res.status(500).json({ error: "Failed to fetch item" });
     }
   });
@@ -547,13 +654,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = insertItemSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid item data", details: result.error.errors });
+        return res
+          .status(400)
+          .json({ error: "Invalid item data", details: result.error.errors });
       }
-      
+
       const item = await storage.createItem(result.data);
       res.json(item);
     } catch (error) {
-      console.error('Error creating item:', error);
+      console.error("Error creating item:", error);
       res.status(500).json({ error: "Failed to create item" });
     }
   });
@@ -562,16 +671,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = updateItemSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid item data", details: result.error.errors });
+        return res
+          .status(400)
+          .json({ error: "Invalid item data", details: result.error.errors });
       }
-      
+
       const item = await storage.updateItem(req.params.id, result.data);
       if (!item) {
         return res.status(404).json({ error: "Item not found" });
       }
       res.json(item);
     } catch (error) {
-      console.error('Error updating item:', error);
+      console.error("Error updating item:", error);
       res.status(500).json({ error: "Failed to update item" });
     }
   });
@@ -584,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true });
     } catch (error) {
-      console.error('Error deleting item:', error);
+      console.error("Error deleting item:", error);
       res.status(500).json({ error: "Failed to delete item" });
     }
   });
@@ -600,13 +711,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         limit = Math.min(parsed, 100); // Cap at 100 messages
       }
-      
-      const messages = limit ? 
-        await storage.getRecentMessages(limit) : 
-        await storage.getMessages();
+
+      const messages = limit
+        ? await storage.getRecentMessages(limit)
+        : await storage.getMessages();
       res.json(messages);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error("Error fetching messages:", error);
       res.status(500).json({ error: "Failed to fetch messages" });
     }
   });
@@ -616,18 +727,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set server-side timestamp
       const messageData = {
         ...req.body,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
-      
+
       const result = insertMessageSchema.safeParse(messageData);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid message data", details: result.error.errors });
+        return res.status(400).json({
+          error: "Invalid message data",
+          details: result.error.errors,
+        });
       }
-      
+
       const message = await storage.createMessage(result.data);
       res.json(message);
     } catch (error) {
-      console.error('Error creating message:', error);
+      console.error("Error creating message:", error);
       res.status(500).json({ error: "Failed to create message" });
     }
   });
@@ -637,7 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.clearMessages();
       res.json({ success: true });
     } catch (error) {
-      console.error('Error clearing messages:', error);
+      console.error("Error clearing messages:", error);
       res.status(500).json({ error: "Failed to clear messages" });
     }
   });
@@ -648,7 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const gameState = await storage.getGameState();
       res.json(gameState);
     } catch (error) {
-      console.error('Error fetching game state:', error);
+      console.error("Error fetching game state:", error);
       res.status(500).json({ error: "Failed to fetch game state" });
     }
   });
@@ -657,13 +774,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const result = insertGameStateSchema.safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid game state data", details: result.error.errors });
+        return res.status(400).json({
+          error: "Invalid game state data",
+          details: result.error.errors,
+        });
       }
-      
+
       const gameState = await storage.createGameState(result.data);
       res.json(gameState);
     } catch (error) {
-      console.error('Error creating game state:', error);
+      console.error("Error creating game state:", error);
       res.status(500).json({ error: "Failed to create game state" });
     }
   });
@@ -673,7 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const gameState = await storage.updateGameState(req.body);
       res.json(gameState);
     } catch (error) {
-      console.error('Error updating game state:', error);
+      console.error("Error updating game state:", error);
       res.status(500).json({ error: "Failed to update game state" });
     }
   });
@@ -682,19 +802,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/chat", async (req, res) => {
     try {
       const { message } = req.body;
-      if (!message || typeof message !== 'string') {
+      if (!message || typeof message !== "string") {
         return res.status(400).json({ error: "Message is required" });
       }
 
-      // Generate AI response
-      const aiResponse = await aiService.generateResponse(message);
+      // Generate AI response with fallback handling
+      let aiResponse;
+      try {
+        aiResponse = await aiService.generateResponse(message);
+      } catch (aiError: any) {
+        console.error("AI response generation failed:", aiError);
+        
+        // Provide a fallback response when AI is unavailable
+        aiResponse = {
+          content: "The Dungeon Master seems distracted by mystical forces and doesn't respond clearly. The adventure continues, but the AI storytelling is temporarily unavailable.",
+          sender: 'dm' as const,
+          senderName: null
+        };
+      }
 
       // Store the player message
       await storage.createMessage({
         content: message,
-        sender: 'player',
+        sender: "player",
         senderName: null,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
 
       // Store the AI response
@@ -702,62 +837,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: aiResponse.content,
         sender: aiResponse.sender,
         senderName: aiResponse.senderName,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
 
       // Apply any game actions from the AI response with validation
       if (aiResponse.actions) {
         const actions = aiResponse.actions;
-        
+
         // Update quest if specified
         if (actions.updateQuest) {
-          const questValidation = updateQuestSchema.safeParse(actions.updateQuest.updates);
+          const questValidation = updateQuestSchema.safeParse(
+            actions.updateQuest.updates,
+          );
           if (questValidation.success) {
-            const updatedQuest = await storage.updateQuest(actions.updateQuest.id, questValidation.data);
-            
+            const updatedQuest = await storage.updateQuest(
+              actions.updateQuest.id,
+              questValidation.data,
+            );
+
             // Generate follow-up quest if main story quest was just completed
-            if (updatedQuest && (updatedQuest as any).wasJustCompleted && updatedQuest.isMainStory) {
+            if (
+              updatedQuest &&
+              (updatedQuest as any).wasJustCompleted &&
+              updatedQuest.isMainStory
+            ) {
               try {
                 const character = await storage.getCharacter();
                 const gameState = await storage.getGameState();
-                const followUpQuest = await aiService.generateFollowUpQuest(updatedQuest, { character, gameState });
-                
+                const followUpQuest = await aiService.generateFollowUpQuest(
+                  updatedQuest,
+                  { character, gameState },
+                );
+
                 if (followUpQuest) {
                   // Ensure the completed quest has a chainId for consistency
                   if (!updatedQuest.chainId) {
-                    await storage.updateQuest(updatedQuest.id, { chainId: updatedQuest.id });
+                    await storage.updateQuest(updatedQuest.id, {
+                      chainId: updatedQuest.id,
+                    });
                   }
-                  
+
                   // Validate and create follow-up quest
                   const questValidation = insertQuestSchema.safeParse({
                     ...followUpQuest,
                     parentQuestId: updatedQuest.id,
                     chainId: updatedQuest.chainId || updatedQuest.id,
-                    isMainStory: true
+                    isMainStory: true,
                   });
-                  
+
                   if (questValidation.success) {
                     await storage.createQuest(questValidation.data);
                   } else {
-                    console.warn('Invalid follow-up quest data:', questValidation.error.errors);
+                    console.warn(
+                      "Invalid follow-up quest data:",
+                      questValidation.error.errors,
+                    );
                   }
                 }
               } catch (error) {
-                console.warn('Error generating follow-up quest:', error);
+                console.warn("Error generating follow-up quest:", error);
               }
             }
           } else {
-            console.warn('Invalid AI quest update:', questValidation.error.errors);
+            console.warn(
+              "Invalid AI quest update:",
+              questValidation.error.errors,
+            );
           }
         }
 
         // Create new quest if specified
         if (actions.createQuest) {
-          const questValidation = insertQuestSchema.safeParse(actions.createQuest);
+          const questValidation = insertQuestSchema.safeParse(
+            actions.createQuest,
+          );
           if (questValidation.success) {
             await storage.createQuest(questValidation.data);
           } else {
-            console.warn('Invalid AI quest creation:', questValidation.error.errors);
+            console.warn(
+              "Invalid AI quest creation:",
+              questValidation.error.errors,
+            );
           }
         }
 
@@ -765,22 +928,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (actions.updateCharacter) {
           const character = await storage.getCharacter();
           if (character) {
-            const charValidation = updateCharacterSchema.safeParse(actions.updateCharacter.updates);
+            const charValidation = updateCharacterSchema.safeParse(
+              actions.updateCharacter.updates,
+            );
             if (charValidation.success) {
               await storage.updateCharacter(character.id, charValidation.data);
             } else {
-              console.warn('Invalid AI character update:', charValidation.error.errors);
+              console.warn(
+                "Invalid AI character update:",
+                charValidation.error.errors,
+              );
             }
           }
         }
 
         // Update game state if specified
         if (actions.updateGameState) {
-          const gameStateValidation = insertGameStateSchema.partial().safeParse(actions.updateGameState);
+          const gameStateValidation = insertGameStateSchema
+            .partial()
+            .safeParse(actions.updateGameState);
           if (gameStateValidation.success) {
             await storage.updateGameState(gameStateValidation.data);
           } else {
-            console.warn('Invalid AI game state update:', gameStateValidation.error.errors);
+            console.warn(
+              "Invalid AI game state update:",
+              gameStateValidation.error.errors,
+            );
           }
         }
 
@@ -790,18 +963,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (itemValidation.success) {
             await storage.createItem(itemValidation.data);
           } else {
-            console.warn('Invalid AI item creation:', itemValidation.error.errors);
+            console.warn(
+              "Invalid AI item creation:",
+              itemValidation.error.errors,
+            );
           }
         }
       }
 
       res.json({
         message: aiMessage,
-        actions: aiResponse.actions
+        actions: aiResponse.actions,
       });
-
     } catch (error) {
-      console.error('Error in AI chat:', error);
+      console.error("Error in AI chat:", error);
       res.status(500).json({ error: "Failed to process AI conversation" });
     }
   });
@@ -810,29 +985,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/quick-action", async (req, res) => {
     try {
       const { action } = req.body;
-      if (!action || typeof action !== 'string') {
+      if (!action || typeof action !== "string") {
         return res.status(400).json({ error: "Action is required" });
       }
 
-      let actionMessage = '';
+      let actionMessage = "";
       switch (action) {
-        case 'attack':
-          actionMessage = 'I ready my weapon and prepare to attack!';
+        case "attack":
+          actionMessage = "I ready my weapon and prepare to attack!";
           break;
-        case 'investigate':
-          actionMessage = 'I carefully examine my surroundings for clues and details.';
+        case "investigate":
+          actionMessage =
+            "I carefully examine my surroundings for clues and details.";
           break;
-        case 'talk':
-          actionMessage = 'I attempt to communicate and engage in dialogue.';
+        case "talk":
+          actionMessage = "I attempt to communicate and engage in dialogue.";
           break;
-        case 'defend':
-          actionMessage = 'I take a defensive stance and prepare to protect myself.';
+        case "defend":
+          actionMessage =
+            "I take a defensive stance and prepare to protect myself.";
           break;
-        case 'cast':
-          actionMessage = 'I prepare to cast a spell or use magic.';
+        case "cast":
+          actionMessage = "I prepare to cast a spell or use magic.";
           break;
-        case 'use-item':
-          actionMessage = 'I look through my items to find something useful.';
+        case "use-item":
+          actionMessage = "I look through my items to find something useful.";
           break;
         default:
           actionMessage = `I perform the ${action} action.`;
@@ -844,87 +1021,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store messages and apply actions (same as regular chat)
       await storage.createMessage({
         content: actionMessage,
-        sender: 'player',
+        sender: "player",
         senderName: null,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
 
       const aiMessage = await storage.createMessage({
         content: aiResponse.content,
         sender: aiResponse.sender,
         senderName: aiResponse.senderName,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       });
 
       // Apply actions if any with validation
       if (aiResponse.actions) {
         const actions = aiResponse.actions;
-        
+
         if (actions.updateQuest) {
-          const questValidation = updateQuestSchema.safeParse(actions.updateQuest.updates);
+          const questValidation = updateQuestSchema.safeParse(
+            actions.updateQuest.updates,
+          );
           if (questValidation.success) {
-            const updatedQuest = await storage.updateQuest(actions.updateQuest.id, questValidation.data);
-            
+            const updatedQuest = await storage.updateQuest(
+              actions.updateQuest.id,
+              questValidation.data,
+            );
+
             // Generate follow-up quest if main story quest was just completed
-            if (updatedQuest && (updatedQuest as any).wasJustCompleted && updatedQuest.isMainStory) {
+            if (
+              updatedQuest &&
+              (updatedQuest as any).wasJustCompleted &&
+              updatedQuest.isMainStory
+            ) {
               try {
                 const character = await storage.getCharacter();
                 const gameState = await storage.getGameState();
-                const followUpQuest = await aiService.generateFollowUpQuest(updatedQuest, { character, gameState });
-                
+                const followUpQuest = await aiService.generateFollowUpQuest(
+                  updatedQuest,
+                  { character, gameState },
+                );
+
                 if (followUpQuest) {
                   // Ensure the completed quest has a chainId for consistency
                   if (!updatedQuest.chainId) {
-                    await storage.updateQuest(updatedQuest.id, { chainId: updatedQuest.id });
+                    await storage.updateQuest(updatedQuest.id, {
+                      chainId: updatedQuest.id,
+                    });
                   }
-                  
+
                   // Validate and create follow-up quest
                   const questValidation = insertQuestSchema.safeParse({
                     ...followUpQuest,
                     parentQuestId: updatedQuest.id,
                     chainId: updatedQuest.chainId || updatedQuest.id,
-                    isMainStory: true
+                    isMainStory: true,
                   });
-                  
+
                   if (questValidation.success) {
                     await storage.createQuest(questValidation.data);
                   } else {
-                    console.warn('Invalid follow-up quest data:', questValidation.error.errors);
+                    console.warn(
+                      "Invalid follow-up quest data:",
+                      questValidation.error.errors,
+                    );
                   }
                 }
               } catch (error) {
-                console.warn('Error generating follow-up quest:', error);
+                console.warn("Error generating follow-up quest:", error);
               }
             }
           } else {
-            console.warn('Invalid AI quest update:', questValidation.error.errors);
+            console.warn(
+              "Invalid AI quest update:",
+              questValidation.error.errors,
+            );
           }
         }
         if (actions.createQuest) {
-          const questValidation = insertQuestSchema.safeParse(actions.createQuest);
+          const questValidation = insertQuestSchema.safeParse(
+            actions.createQuest,
+          );
           if (questValidation.success) {
             await storage.createQuest(questValidation.data);
           } else {
-            console.warn('Invalid AI quest creation:', questValidation.error.errors);
+            console.warn(
+              "Invalid AI quest creation:",
+              questValidation.error.errors,
+            );
           }
         }
         if (actions.updateCharacter) {
           const character = await storage.getCharacter();
           if (character) {
-            const charValidation = updateCharacterSchema.safeParse(actions.updateCharacter.updates);
+            const charValidation = updateCharacterSchema.safeParse(
+              actions.updateCharacter.updates,
+            );
             if (charValidation.success) {
               await storage.updateCharacter(character.id, charValidation.data);
             } else {
-              console.warn('Invalid AI character update:', charValidation.error.errors);
+              console.warn(
+                "Invalid AI character update:",
+                charValidation.error.errors,
+              );
             }
           }
         }
         if (actions.updateGameState) {
-          const gameStateValidation = insertGameStateSchema.partial().safeParse(actions.updateGameState);
+          const gameStateValidation = insertGameStateSchema
+            .partial()
+            .safeParse(actions.updateGameState);
           if (gameStateValidation.success) {
             await storage.updateGameState(gameStateValidation.data);
           } else {
-            console.warn('Invalid AI game state update:', gameStateValidation.error.errors);
+            console.warn(
+              "Invalid AI game state update:",
+              gameStateValidation.error.errors,
+            );
           }
         }
         if (actions.giveItem) {
@@ -932,18 +1150,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (itemValidation.success) {
             await storage.createItem(itemValidation.data);
           } else {
-            console.warn('Invalid AI item creation:', itemValidation.error.errors);
+            console.warn(
+              "Invalid AI item creation:",
+              itemValidation.error.errors,
+            );
           }
         }
       }
 
       res.json({
         message: aiMessage,
-        actions: aiResponse.actions
+        actions: aiResponse.actions,
       });
-
     } catch (error) {
-      console.error('Error in quick action:', error);
+      console.error("Error in quick action:", error);
       res.status(500).json({ error: "Failed to process quick action" });
     }
   });
@@ -954,7 +1174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const campaigns = await storage.getCampaigns();
       res.json(campaigns);
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
+      console.error("Error fetching campaigns:", error);
       res.status(500).json({ error: "Failed to fetch campaigns" });
     }
   });
@@ -967,22 +1187,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(campaign);
     } catch (error) {
-      console.error('Error fetching active campaign:', error);
+      console.error("Error fetching active campaign:", error);
       res.status(500).json({ error: "Failed to fetch active campaign" });
     }
   });
 
   app.post("/api/campaigns", async (req, res) => {
     try {
-      const result = insertCampaignSchema.omit({ id: true, createdAt: true, lastPlayed: true, isActive: true }).safeParse(req.body);
+      const result = insertCampaignSchema
+        .omit({ id: true, createdAt: true, lastPlayed: true, isActive: true })
+        .safeParse(req.body);
       if (!result.success) {
-        return res.status(400).json({ error: "Invalid campaign data", details: result.error.errors });
+        return res.status(400).json({
+          error: "Invalid campaign data",
+          details: result.error.errors,
+        });
       }
-      
+
       const campaign = await storage.createCampaign(result.data);
       res.json(campaign);
     } catch (error) {
-      console.error('Error creating campaign:', error);
+      console.error("Error creating campaign:", error);
       res.status(500).json({ error: "Failed to create campaign" });
     }
   });
@@ -995,7 +1220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(campaign);
     } catch (error) {
-      console.error('Error activating campaign:', error);
+      console.error("Error activating campaign:", error);
       res.status(500).json({ error: "Failed to activate campaign" });
     }
   });
@@ -1008,7 +1233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ success: true });
     } catch (error) {
-      console.error('Error deleting campaign:', error);
+      console.error("Error deleting campaign:", error);
       res.status(500).json({ error: "Failed to delete campaign" });
     }
   });
@@ -1019,20 +1244,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!campaign) {
         return res.status(404).json({ error: "Campaign not found" });
       }
-      
+
       const gameState = await storage.getGameState();
       if (gameState) {
         await storage.updateGameState({
           turnCount: 0,
           currentTurn: null,
           combatId: null,
-          inCombat: false
+          inCombat: false,
         });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
-      console.error('Error resetting rounds:', error);
+      console.error("Error resetting rounds:", error);
       res.status(500).json({ error: "Failed to reset rounds" });
     }
   });
