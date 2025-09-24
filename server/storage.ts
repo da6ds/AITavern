@@ -250,6 +250,9 @@ export class MemStorage implements IStorage {
       progress: quest.progress ?? 0,
       maxProgress: quest.maxProgress ?? 1,
       reward: quest.reward ?? null,
+      parentQuestId: quest.parentQuestId ?? null,
+      chainId: quest.chainId ?? null,
+      isMainStory: quest.isMainStory ?? false,
     };
     this.quests.set(id, newQuest);
     return newQuest;
@@ -270,9 +273,20 @@ export class MemStorage implements IStorage {
     if (updatedQuest.progress < 0) {
       updatedQuest.progress = 0;
     }
+
+    // Detect quest completion - either status changed to completed OR progress reached max
+    const wasJustCompleted = (quest.status !== 'completed' && updatedQuest.status === 'completed') ||
+                            (quest.progress < quest.maxProgress && updatedQuest.progress >= updatedQuest.maxProgress);
+    
+    // Auto-complete quest when progress reaches max
+    if (updatedQuest.progress >= updatedQuest.maxProgress && updatedQuest.status === 'active') {
+      updatedQuest.status = 'completed';
+    }
     
     this.quests.set(id, updatedQuest);
-    return updatedQuest;
+    
+    // Return updated quest with completion flag for follow-up generation
+    return { ...updatedQuest, wasJustCompleted } as Quest & { wasJustCompleted?: boolean };
   }
 
   async deleteQuest(id: string): Promise<boolean> {

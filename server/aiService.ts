@@ -43,10 +43,13 @@ INTERACTION STYLE:
 - Balance success and failure to maintain tension
 
 QUEST MANAGEMENT:
-- Generate new quests based on player actions and story progression
+- Generate dynamic quests based on player actions, choices, and story progression
+- Create interconnected quest chains with branching narratives
 - Update quest progress as the player completes objectives
-- Create side quests and main story arcs
+- Automatically spawn follow-up quests when main objectives are completed
+- Create side quests that tie into the main storyline
 - Ensure quests have clear objectives and meaningful rewards
+- Track quest relationships and dependencies
 
 CHARACTER PROGRESSION:
 - Award experience for completing quests and overcoming challenges
@@ -127,6 +130,12 @@ Remember to respond as the character or DM that makes most sense for the context
         const speaker = msg.sender === 'dm' ? 'DM' : msg.sender === 'npc' ? (msg.senderName || 'NPC') : 'Player';
         prompt += `${speaker}: ${msg.content}\\n`;
       });
+      prompt += "\\n";
+    }
+
+    // Quest relationship analysis
+    if (activeQuests.length > 1) {
+      prompt += "QUEST DYNAMICS: Consider how current quests might interconnect or influence each other.\\n\\n";
     }
 
     return prompt;
@@ -162,15 +171,21 @@ Format your response as JSON with this structure:
   "senderName": null for DM, or NPC name if speaking as NPC,
   "actions": {
     // Optional game state updates based on the interaction
-    "updateQuest": { "id": "quest-id", "updates": { "progress": 2 } },
-    "createQuest": { "title": "New Quest", "description": "...", "status": "active", "priority": "normal", "progress": 0, "maxProgress": 3, "reward": "..." },
-    "updateCharacter": { "updates": { "currentHealth": 45, "experience": 150 } },
-    "updateGameState": { "currentScene": "New Location", "inCombat": false },
-    "giveItem": { "name": "Magic Sword", "type": "weapon", "description": "...", "quantity": 1, "rarity": "rare", "equipped": false }
+    "updateQuest": { "id": "quest-id", "updates": { "progress": 2, "status": "completed" } },
+    "createQuest": { "title": "Quest Title", "description": "Clear objectives", "status": "active", "priority": "high|normal|low", "progress": 0, "maxProgress": 3, "reward": "Experience/items/gold" },
+    "updateCharacter": { "updates": { "currentHealth": 45, "experience": 150, "level": 2 } },
+    "updateGameState": { "currentScene": "Location Name", "inCombat": false, "timeOfDay": "morning", "weather": "clear" },
+    "giveItem": { "name": "Item Name", "type": "weapon|armor|consumable|misc", "description": "Item description", "quantity": 1, "rarity": "common|uncommon|rare|epic|legendary", "equipped": false }
   }
 }
 
-Only include actions that are warranted by the story progression. Most responses won't need any actions.`
+Only include actions that are warranted by the story progression. Most responses won't need any actions.
+
+QUEST PROGRESSION RULES:
+- When a quest reaches maxProgress, automatically set status to "completed" 
+- Generate follow-up quests for completed main story objectives
+- Create branching paths based on player choices and actions
+- Ensure quest rewards match difficulty and player level`
         }
       ];
 
@@ -199,6 +214,50 @@ Only include actions that are warranted by the story progression. Most responses
         sender: 'dm',
         senderName: null
       };
+    }
+  }
+
+  async generateFollowUpQuest(completedQuest: Quest, context: {
+    character: Character | undefined;
+    gameState: GameState | undefined;
+  }): Promise<Quest | null> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content: "You are a D&D Dungeon Master creating follow-up quests that continue story arcs."
+          },
+          {
+            role: "user",
+            content: `The player just completed: "${completedQuest.title}"
+            Description: ${completedQuest.description}
+            
+            Player Level: ${context.character?.level || 1}
+            Current Scene: ${context.gameState?.currentScene || "Unknown"}
+            
+            Create a natural follow-up quest that continues this storyline. Format as JSON:
+            {
+              "title": "Quest Title",
+              "description": "Engaging description that builds on the completed quest",
+              "status": "active",
+              "priority": "normal",
+              "progress": 0,
+              "maxProgress": 3,
+              "reward": "Appropriate reward"
+            }`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      return result.title ? result : null;
+      
+    } catch (error) {
+      console.error('Error generating follow-up quest:', error);
+      return null;
     }
   }
 

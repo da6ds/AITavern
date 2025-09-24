@@ -371,7 +371,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (actions.updateQuest) {
           const questValidation = updateQuestSchema.safeParse(actions.updateQuest.updates);
           if (questValidation.success) {
-            await storage.updateQuest(actions.updateQuest.id, questValidation.data);
+            const updatedQuest = await storage.updateQuest(actions.updateQuest.id, questValidation.data);
+            
+            // Generate follow-up quest if main story quest was just completed
+            if (updatedQuest && (updatedQuest as any).wasJustCompleted && updatedQuest.isMainStory) {
+              try {
+                const character = await storage.getCharacter();
+                const gameState = await storage.getGameState();
+                const followUpQuest = await aiService.generateFollowUpQuest(updatedQuest, { character, gameState });
+                
+                if (followUpQuest) {
+                  // Ensure the completed quest has a chainId for consistency
+                  if (!updatedQuest.chainId) {
+                    await storage.updateQuest(updatedQuest.id, { chainId: updatedQuest.id });
+                  }
+                  
+                  // Validate and create follow-up quest
+                  const questValidation = insertQuestSchema.safeParse({
+                    ...followUpQuest,
+                    parentQuestId: updatedQuest.id,
+                    chainId: updatedQuest.chainId || updatedQuest.id,
+                    isMainStory: true
+                  });
+                  
+                  if (questValidation.success) {
+                    await storage.createQuest(questValidation.data);
+                  } else {
+                    console.warn('Invalid follow-up quest data:', questValidation.error.errors);
+                  }
+                }
+              } catch (error) {
+                console.warn('Error generating follow-up quest:', error);
+              }
+            }
           } else {
             console.warn('Invalid AI quest update:', questValidation.error.errors);
           }
@@ -489,7 +521,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (actions.updateQuest) {
           const questValidation = updateQuestSchema.safeParse(actions.updateQuest.updates);
           if (questValidation.success) {
-            await storage.updateQuest(actions.updateQuest.id, questValidation.data);
+            const updatedQuest = await storage.updateQuest(actions.updateQuest.id, questValidation.data);
+            
+            // Generate follow-up quest if main story quest was just completed
+            if (updatedQuest && (updatedQuest as any).wasJustCompleted && updatedQuest.isMainStory) {
+              try {
+                const character = await storage.getCharacter();
+                const gameState = await storage.getGameState();
+                const followUpQuest = await aiService.generateFollowUpQuest(updatedQuest, { character, gameState });
+                
+                if (followUpQuest) {
+                  // Ensure the completed quest has a chainId for consistency
+                  if (!updatedQuest.chainId) {
+                    await storage.updateQuest(updatedQuest.id, { chainId: updatedQuest.id });
+                  }
+                  
+                  // Validate and create follow-up quest
+                  const questValidation = insertQuestSchema.safeParse({
+                    ...followUpQuest,
+                    parentQuestId: updatedQuest.id,
+                    chainId: updatedQuest.chainId || updatedQuest.id,
+                    isMainStory: true
+                  });
+                  
+                  if (questValidation.success) {
+                    await storage.createQuest(questValidation.data);
+                  } else {
+                    console.warn('Invalid follow-up quest data:', questValidation.error.errors);
+                  }
+                }
+              } catch (error) {
+                console.warn('Error generating follow-up quest:', error);
+              }
+            }
           } else {
             console.warn('Invalid AI quest update:', questValidation.error.errors);
           }

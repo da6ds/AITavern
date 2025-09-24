@@ -36,6 +36,9 @@ export const quests = pgTable("quests", {
   progress: integer("progress").default(0).notNull(),
   maxProgress: integer("max_progress").default(1).notNull(),
   reward: text("reward"),
+  parentQuestId: varchar("parent_quest_id"), // For quest chains
+  chainId: varchar("chain_id"), // Groups related quests
+  isMainStory: boolean("is_main_story").default(false).notNull(), // Main story vs side quest
 });
 
 // Inventory Item Schema
@@ -72,6 +75,12 @@ export const insertQuestSchema = createInsertSchema(quests);
 export const insertItemSchema = createInsertSchema(items);
 export const insertMessageSchema = createInsertSchema(messages);
 export const insertGameStateSchema = createInsertSchema(gameState);
+
+// Update schemas for partial updates
+export const updateCharacterSchema = insertCharacterSchema.omit({ name: true, class: true }).partial();
+export const updateQuestSchema = insertQuestSchema.partial();
+export const updateItemSchema = insertItemSchema.partial();
+export const updateGameStateSchema = insertGameStateSchema.partial();
 
 // Types
 export type Character = typeof characters.$inferSelect;
