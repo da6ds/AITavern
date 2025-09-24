@@ -9,6 +9,8 @@ import {
   type InsertItem,
   type Message,
   type InsertMessage,
+  type Enemy,
+  type InsertEnemy,
   type GameState,
   type InsertGameState
 } from "@shared/schema";
@@ -41,6 +43,13 @@ export interface IStorage {
   updateItem(id: string, updates: Partial<Item>): Promise<Item | null>;
   deleteItem(id: string): Promise<boolean>;
   
+  // Enemy management
+  getEnemies(combatId?: string): Promise<Enemy[]>;
+  getEnemy(id: string): Promise<Enemy | undefined>;
+  createEnemy(enemy: InsertEnemy): Promise<Enemy>;
+  updateEnemy(id: string, updates: Partial<Enemy>): Promise<Enemy | null>;
+  deleteEnemy(id: string): Promise<boolean>;
+  
   // Message history for AI conversations
   getMessages(): Promise<Message[]>;
   getRecentMessages(limit: number): Promise<Message[]>;
@@ -58,6 +67,7 @@ export class MemStorage implements IStorage {
   private character: Character | undefined;
   private quests: Map<string, Quest>;
   private items: Map<string, Item>;
+  private enemies: Map<string, Enemy>;
   private messages: Message[];
   private gameState: GameState | undefined;
 
@@ -65,6 +75,7 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.quests = new Map();
     this.items = new Map();
+    this.enemies = new Map();
     this.messages = [];
   }
 
@@ -143,6 +154,8 @@ export class MemStorage implements IStorage {
         currentScene: 'Starting Village',
         inCombat: false,
         currentTurn: null,
+        combatId: null,
+        turnCount: 0,
       };
     }
   }
@@ -198,8 +211,41 @@ export class MemStorage implements IStorage {
       return null;
     }
     
+    const oldCharacter = { ...this.character };
     // Apply updates with validation
     const updatedCharacter = { ...this.character, ...updates };
+    
+    // Check for level up if experience increased
+    if (updates.experience !== undefined && updates.experience > oldCharacter.experience) {
+      const newLevel = Math.floor(updatedCharacter.experience / 100) + 1; // Level up every 100 exp
+      
+      if (newLevel > oldCharacter.level) {
+        // Level up! Increase stats and health/mana
+        const levelDiff = newLevel - oldCharacter.level;
+        
+        updatedCharacter.level = newLevel;
+        updatedCharacter.maxHealth += levelDiff * 5; // +5 HP per level
+        updatedCharacter.maxMana += levelDiff * 3; // +3 Mana per level
+        updatedCharacter.currentHealth = updatedCharacter.maxHealth; // Full heal on level up
+        updatedCharacter.currentMana = updatedCharacter.maxMana;
+        
+        // Increase primary stats
+        updatedCharacter.strength += levelDiff;
+        updatedCharacter.constitution += levelDiff;
+        
+        // Bonus stats based on class
+        if (updatedCharacter.class === 'Fighter') {
+          updatedCharacter.strength += levelDiff;
+          updatedCharacter.dexterity += Math.floor(levelDiff / 2);
+        } else if (updatedCharacter.class === 'Wizard') {
+          updatedCharacter.intelligence += levelDiff;
+          updatedCharacter.wisdom += Math.floor(levelDiff / 2);
+        } else if (updatedCharacter.class === 'Rogue') {
+          updatedCharacter.dexterity += levelDiff;
+          updatedCharacter.charisma += Math.floor(levelDiff / 2);
+        }
+      }
+    }
     
     // Ensure health doesn't exceed max and isn't negative
     if (updatedCharacter.currentHealth > updatedCharacter.maxHealth) {
@@ -284,6 +330,24 @@ export class MemStorage implements IStorage {
     }
     
     this.quests.set(id, updatedQuest);
+    
+    // Award experience if quest was just completed
+    if (wasJustCompleted && this.character) {
+      let expReward = 30; // Base experience
+      
+      // Bonus experience based on priority
+      if (updatedQuest.priority === 'urgent') expReward += 40;
+      else if (updatedQuest.priority === 'high') expReward += 25;
+      else if (updatedQuest.priority === 'normal') expReward += 15;
+      
+      // Main story quests give extra experience
+      if (updatedQuest.isMainStory) expReward += 30;
+      
+      const newExp = this.character.experience + expReward;
+      
+      // Apply level up logic through updateCharacter
+      await this.updateCharacter(this.character.id, { experience: newExp });
+    }
     
     // Return updated quest with completion flag for follow-up generation
     return { ...updatedQuest, wasJustCompleted } as Quest & { wasJustCompleted?: boolean };
@@ -397,6 +461,8 @@ export class MemStorage implements IStorage {
       currentScene: state.currentScene,
       inCombat: state.inCombat ?? false,
       currentTurn: state.currentTurn ?? null,
+      combatId: state.combatId ?? null,
+      turnCount: state.turnCount ?? 0,
     };
     this.gameState = newGameState;
     return this.gameState;
@@ -408,6 +474,67 @@ export class MemStorage implements IStorage {
     }
     this.gameState = { ...this.gameState, ...updates };
     return this.gameState;
+  }
+
+  // Enemy management
+  async getEnemies(combatId?: string): Promise<Enemy[]> {
+    const enemies = Array.from(this.enemies.values());
+    if (combatId) {
+      return enemies.filter(enemy => enemy.combatId === combatId && enemy.isActive);
+    }
+    return enemies.filter(enemy => enemy.isActive);
+  }
+
+  async getEnemy(id: string): Promise<Enemy | undefined> {
+    return this.enemies.get(id);
+  }
+
+  async createEnemy(enemy: InsertEnemy): Promise<Enemy> {
+    const id = randomUUID();
+    const newEnemy: Enemy = {
+      id,
+      name: enemy.name,
+      level: enemy.level ?? 1,
+      currentHealth: enemy.currentHealth,
+      maxHealth: enemy.maxHealth,
+      attack: enemy.attack ?? 10,
+      defense: enemy.defense ?? 10,
+      speed: enemy.speed ?? 10,
+      combatId: enemy.combatId ?? null,
+      isActive: enemy.isActive ?? true,
+      abilities: enemy.abilities ?? [],
+    };
+    this.enemies.set(id, newEnemy);
+    return newEnemy;
+  }
+
+  async updateEnemy(id: string, updates: Partial<Enemy>): Promise<Enemy | null> {
+    const enemy = this.enemies.get(id);
+    if (!enemy) {
+      return null;
+    }
+    
+    const updatedEnemy = { ...enemy, ...updates };
+    
+    // Ensure health doesn't exceed max and isn't negative
+    if (updatedEnemy.currentHealth > updatedEnemy.maxHealth) {
+      updatedEnemy.currentHealth = updatedEnemy.maxHealth;
+    }
+    if (updatedEnemy.currentHealth < 0) {
+      updatedEnemy.currentHealth = 0;
+    }
+
+    // Mark enemy as inactive if health reaches 0
+    if (updatedEnemy.currentHealth <= 0 && updatedEnemy.isActive) {
+      updatedEnemy.isActive = false;
+    }
+    
+    this.enemies.set(id, updatedEnemy);
+    return updatedEnemy;
+  }
+
+  async deleteEnemy(id: string): Promise<boolean> {
+    return this.enemies.delete(id);
   }
 }
 

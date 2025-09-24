@@ -46,9 +46,13 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div 
-                className="bg-accent h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${((character.experience % 1000) / 1000) * 100}%` }}
+                className="bg-primary h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${((character.experience % 100) / 100) * 100}%` }}
+                data-testid="experience-progress"
               />
+            </div>
+            <div className="text-xs text-muted-foreground text-center">
+              {character.experience % 100}/100 to level {character.level + 1}
             </div>
           </div>
         </CardContent>

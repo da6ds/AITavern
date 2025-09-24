@@ -13,7 +13,7 @@ import ChatInterface from "./components/ChatInterface";
 import CombatInterface from "./components/CombatInterface";
 
 // Types
-import type { Character, Quest, Item, Message, GameState } from "@shared/schema";
+import type { Character, Quest, Item, Message, Enemy, GameState } from "@shared/schema";
 
 type TabType = "character" | "quests" | "inventory" | "chat";
 
@@ -46,22 +46,16 @@ function GameApp() {
   const isInCombat = gameState?.inCombat || false;
   const currentTurn = gameState?.currentTurn === 'player' ? 'player' : 'enemy';
   
-  const mockEnemies = [
-    {
-      id: '1',
-      name: 'Vampire Thrall',
-      currentHealth: 18,
-      maxHealth: 30,
-      level: 5
+  // Fetch enemies for combat
+  const { data: enemies = [] } = useQuery({
+    queryKey: ['/api/enemies', gameState?.combatId],
+    queryFn: async () => {
+      const params = gameState?.combatId ? `?combatId=${gameState.combatId}` : '';
+      const response = await apiRequest('GET', `/api/enemies${params}`);
+      return response.json();
     },
-    {
-      id: '2',
-      name: 'Blood Bat Swarm',
-      currentHealth: 8,
-      maxHealth: 15,
-      level: 3
-    }
-  ];
+    enabled: isInCombat && !!gameState?.combatId,
+  });
   
   // AI Chat mutation
   const aiChatMutation = useMutation({
@@ -76,6 +70,7 @@ function GameApp() {
       queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/items'] });
       queryClient.invalidateQueries({ queryKey: ['/api/game-state'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enemies'] });
     },
   });
   
@@ -92,6 +87,31 @@ function GameApp() {
       queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/items'] });
       queryClient.invalidateQueries({ queryKey: ['/api/game-state'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enemies'] });
+    },
+  });
+  
+  // Combat action mutation
+  const combatActionMutation = useMutation({
+    mutationFn: async ({ action, targetId, spellId, itemId }: {
+      action: string;
+      targetId?: string;
+      spellId?: string;
+      itemId?: string;
+    }) => {
+      const response = await apiRequest('POST', '/api/combat/action', {
+        action, targetId, spellId, itemId
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      // Refetch all data after combat action
+      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/character'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/game-state'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enemies'] });
     },
   });
   
@@ -117,23 +137,19 @@ function GameApp() {
   
   const handleCombatAction = {
     attack: (targetId: string) => {
-      console.log('Attacking enemy:', targetId);
-      handleQuickAction('attack');
+      combatActionMutation.mutate({ action: 'attack', targetId });
     },
     defend: () => {
-      console.log('Player defends');
-      handleQuickAction('defend');
+      combatActionMutation.mutate({ action: 'defend' });
     },
     spell: (spellId: string) => {
-      console.log('Casting spell:', spellId);
-      handleQuickAction('cast');
+      combatActionMutation.mutate({ action: 'cast', spellId });
     },
     item: (itemId: string) => {
-      console.log('Using item:', itemId);
-      handleQuickAction('use-item');
+      combatActionMutation.mutate({ action: 'use-item', itemId });
     },
     flee: () => {
-      handleSendMessage('I attempt to flee from combat!');
+      combatActionMutation.mutate({ action: 'flee' });
     }
   };
   
@@ -263,7 +279,7 @@ function GameApp() {
       <CombatInterface 
         isInCombat={isInCombat}
         currentTurn={currentTurn}
-        enemies={mockEnemies}
+        enemies={enemies}
         onAttack={handleCombatAction.attack}
         onDefend={handleCombatAction.defend}
         onCastSpell={handleCombatAction.spell}

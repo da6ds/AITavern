@@ -6,10 +6,13 @@ import {
   insertQuestSchema,
   insertItemSchema,
   insertMessageSchema,
+  insertEnemySchema,
   insertGameStateSchema,
+  updateEnemySchema,
   type Character,
   type Quest,
-  type Item
+  type Item,
+  type Enemy
 } from "@shared/schema";
 import { z } from "zod";
 import { aiService } from "./aiService";
@@ -104,6 +107,232 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating character:', error);
       res.status(500).json({ error: "Failed to update character" });
+    }
+  });
+
+  // Enemy routes
+  app.get("/api/enemies", async (req, res) => {
+    try {
+      const combatId = req.query.combatId as string | undefined;
+      const enemies = await storage.getEnemies(combatId);
+      res.json(enemies);
+    } catch (error) {
+      console.error('Error fetching enemies:', error);
+      res.status(500).json({ error: "Failed to fetch enemies" });
+    }
+  });
+
+  app.post("/api/enemies", async (req, res) => {
+    try {
+      const result = insertEnemySchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid enemy data", details: result.error.errors });
+      }
+      
+      const enemy = await storage.createEnemy(result.data);
+      res.json(enemy);
+    } catch (error) {
+      console.error('Error creating enemy:', error);
+      res.status(500).json({ error: "Failed to create enemy" });
+    }
+  });
+
+  app.patch("/api/enemies/:id", async (req, res) => {
+    try {
+      const result = updateEnemySchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid enemy data", details: result.error.errors });
+      }
+      
+      const enemy = await storage.updateEnemy(req.params.id, result.data);
+      if (!enemy) {
+        return res.status(404).json({ error: "Enemy not found" });
+      }
+      res.json(enemy);
+    } catch (error) {
+      console.error('Error updating enemy:', error);
+      res.status(500).json({ error: "Failed to update enemy" });
+    }
+  });
+
+  // Combat action endpoint
+  app.post("/api/combat/action", async (req, res) => {
+    try {
+      const { action, targetId, spellId, itemId } = req.body;
+      
+      if (!action || typeof action !== 'string') {
+        return res.status(400).json({ error: "Action is required" });
+      }
+
+      // Process combat action through AI
+      let actionMessage = '';
+      switch (action) {
+        case 'attack':
+          actionMessage = targetId ? `I attack the enemy with ID ${targetId}!` : 'I launch an attack!';
+          break;
+        case 'defend':
+          actionMessage = 'I take a defensive stance, ready to block incoming attacks.';
+          break;
+        case 'cast':
+          actionMessage = spellId ? `I cast spell ${spellId}!` : 'I prepare to cast a spell.';
+          break;
+        case 'use-item':
+          actionMessage = itemId ? `I use item ${itemId}!` : 'I use an item from my inventory.';
+          break;
+        case 'flee':
+          actionMessage = 'I attempt to flee from combat!';
+          break;
+        default:
+          actionMessage = `I perform the ${action} action.`;
+      }
+
+      // Generate AI response for combat action
+      const aiResponse = await aiService.generateResponse(actionMessage);
+
+      // Store messages
+      await storage.createMessage({
+        content: actionMessage,
+        sender: 'player',
+        senderName: null,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+
+      const aiMessage = await storage.createMessage({
+        content: aiResponse.content,
+        sender: aiResponse.sender,
+        senderName: aiResponse.senderName,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+
+      // Apply AI actions (enemy updates, character changes, etc.)
+      if (aiResponse.actions) {
+        const actions = aiResponse.actions;
+        
+        // Start combat if specified
+        if ((actions as any).startCombat) {
+          const combatData = (actions as any).startCombat;
+          const combatId = randomUUID();
+          
+          // Create enemies for this combat encounter
+          if (combatData.enemies && Array.isArray(combatData.enemies)) {
+            for (const enemyData of combatData.enemies) {
+              const enemyValidation = insertEnemySchema.safeParse({ ...enemyData, combatId });
+              if (enemyValidation.success) {
+                await storage.createEnemy(enemyValidation.data);
+              }
+            }
+          }
+          
+          // Update game state to start combat
+          await storage.updateGameState({
+            inCombat: true,
+            combatId,
+            currentTurn: 'player',
+            turnCount: 1
+          });
+        }
+        
+        // Update enemy if specified
+        if ((actions as any).updateEnemy) {
+          const enemyUpdate = (actions as any).updateEnemy;
+          const enemyValidation = updateEnemySchema.safeParse(enemyUpdate.updates);
+          if (enemyValidation.success) {
+            await storage.updateEnemy(enemyUpdate.id, enemyValidation.data);
+          }
+        }
+        
+        // End combat if specified
+        if ((actions as any).endCombat) {
+          const endCombatData = (actions as any).endCombat;
+          
+          // Award victory rewards before ending combat
+          if (endCombatData.victory) {
+            const character = await storage.getCharacter();
+            if (character) {
+              let expGain = 75; // Default experience
+              
+              // Check if rewards is an object with experience property
+              if (endCombatData.rewards && typeof endCombatData.rewards === 'object' && endCombatData.rewards.experience) {
+                expGain = endCombatData.rewards.experience;
+              }
+              
+              const rewardValidation = updateCharacterSchema.safeParse({ experience: character.experience + expGain });
+              if (rewardValidation.success) {
+                await storage.updateCharacter(character.id, rewardValidation.data);
+              }
+            }
+          }
+          
+          await storage.updateGameState({
+            inCombat: false,
+            combatId: null,
+            currentTurn: null,
+            turnCount: 0
+          });
+        }
+        
+        if (actions.updateCharacter) {
+          const character = await storage.getCharacter();
+          if (character) {
+            const charValidation = updateCharacterSchema.safeParse(actions.updateCharacter.updates);
+            if (charValidation.success) {
+              await storage.updateCharacter(character.id, charValidation.data);
+            }
+          }
+        }
+        
+        if (actions.updateGameState) {
+          const gameStateValidation = insertGameStateSchema.partial().safeParse(actions.updateGameState);
+          if (gameStateValidation.success) {
+            await storage.updateGameState(gameStateValidation.data);
+          }
+        }
+      }
+      
+      // Check for combat end conditions and turn management
+      const currentGameState = await storage.getGameState();
+      if (currentGameState?.inCombat && currentGameState.combatId) {
+        const combatEnemies = await storage.getEnemies(currentGameState.combatId);
+        const aliveEnemies = combatEnemies.filter(e => e.isActive && e.currentHealth > 0);
+        
+        // End combat if no enemies left alive
+        if (aliveEnemies.length === 0) {
+          // Award victory rewards - base 50 exp + 10 per enemy defeated
+          const character = await storage.getCharacter();
+          if (character) {
+            const baseExp = 50;
+            const enemyExp = combatEnemies.length * 10;
+            const totalExp = baseExp + enemyExp;
+            await storage.updateCharacter(character.id, { experience: character.experience + totalExp });
+          }
+          
+          await storage.updateGameState({
+            inCombat: false,
+            combatId: null,
+            currentTurn: null,
+            turnCount: 0
+          });
+        }
+        } else {
+          // Toggle turn after player action
+          const newTurn = currentGameState.currentTurn === 'player' ? 'enemy' : 'player';
+          const newTurnCount = newTurn === 'player' ? currentGameState.turnCount + 1 : currentGameState.turnCount;
+          
+          await storage.updateGameState({
+            currentTurn: newTurn,
+            turnCount: newTurnCount
+          });
+        }
+      }
+
+      res.json({
+        message: aiMessage,
+        actions: aiResponse.actions
+      });
+
+    } catch (error) {
+      console.error('Error processing combat action:', error);
+      res.status(500).json({ error: "Failed to process combat action" });
     }
   });
 

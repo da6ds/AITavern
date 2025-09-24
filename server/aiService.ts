@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { storage } from "./storage";
-import type { Character, Quest, Item, Message, GameState } from "@shared/schema";
+import type { Character, Quest, Item, Message, Enemy, GameState } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -15,6 +15,10 @@ export interface AIResponse {
     updateCharacter?: { updates: Partial<Character> };
     updateGameState?: Partial<GameState>;
     giveItem?: Omit<Item, 'id'>;
+    updateEnemy?: { id: string; updates: Partial<Enemy> };
+    createEnemies?: Array<Omit<Enemy, 'id'>>;
+    startCombat?: { enemies: Array<Omit<Enemy, 'id'>>; scene: string };
+    endCombat?: { victory: boolean; rewards?: string };
   };
 }
 
@@ -41,6 +45,13 @@ INTERACTION STYLE:
 - Present choices and consequences naturally
 - Ask for dice rolls when appropriate for D&D mechanics
 - Balance success and failure to maintain tension
+
+COMBAT MANAGEMENT:
+- Handle turn-based combat with strategic AI enemy behavior
+- Calculate damage based on character stats and enemy abilities
+- Manage combat flow: initiative, turns, victory/defeat conditions
+- Create dynamic encounters that scale with player level
+- End combat when appropriate and award experience/rewards
 
 QUEST MANAGEMENT:
 - Generate dynamic quests based on player actions, choices, and story progression
