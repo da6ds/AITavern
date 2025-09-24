@@ -346,7 +346,17 @@ function GameApp() {
   if (currentView === "startMenu") {
     return (
       <StartMenu 
-        onStartGame={() => setCurrentView("game")}
+        onStartGame={async (campaignId: string) => {
+          try {
+            // Activate the selected campaign
+            await apiRequest('PATCH', `/api/campaigns/${campaignId}/activate`);
+            // Invalidate campaigns query to refresh active campaign
+            queryClient.invalidateQueries({ queryKey: ['/api/campaigns/active'] });
+            setCurrentView("game");
+          } catch (error) {
+            console.error('Failed to activate campaign:', error);
+          }
+        }}
         onShowGuide={() => setCurrentView("userGuide")}
         onCreateCharacter={() => setCurrentView("characterCreation")}
         onShowAdventureTemplates={() => setCurrentView("adventureTemplates")}

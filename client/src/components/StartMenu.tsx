@@ -1,10 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Play, HelpCircle, Settings, Sword, Scroll, Dice6, ScrollText, Package, UserPlus, Map } from "lucide-react";
+import { HelpCircle, Settings, Sword, Scroll, UserPlus, Map } from "lucide-react";
+import MultipleAdventures from "./MultipleAdventures";
 
 interface StartMenuProps {
-  onStartGame: () => void;
+  onStartGame: (campaignId: string) => void;
   onShowGuide: () => void;
   onCreateCharacter: () => void;
   onShowAdventureTemplates: () => void;
@@ -36,19 +36,10 @@ export default function StartMenu({
 
       {/* Main Menu Cards */}
       <div className="w-full max-w-sm space-y-4">
-        <Card className="p-6 hover-elevate">
-          <Button 
-            onClick={onStartGame}
-            className="w-full h-16 text-lg font-semibold"
-            data-testid="button-start-game"
-          >
-            <Play className="w-6 h-6 mr-3" />
-            Continue Adventure
-          </Button>
-          <p className="text-sm text-muted-foreground mt-3 text-center">
-            Resume your current quest and continue your journey
-          </p>
-        </Card>
+        <MultipleAdventures 
+          onContinueAdventure={onStartGame}
+          onCreateNew={onCreateCharacter}
+        />
 
         <Card className="p-6 hover-elevate">
           <Button 
@@ -110,25 +101,6 @@ export default function StartMenu({
         )}
       </div>
 
-      {/* Game Features */}
-      <div className="mt-8 grid grid-cols-2 gap-4 w-full max-w-sm">
-        <div className="text-center">
-          <Badge variant="secondary" className="mb-2 flex items-center gap-1"><Dice6 className="w-3 h-3" /> Smart AI</Badge>
-          <p className="text-xs text-muted-foreground">Dynamic storytelling</p>
-        </div>
-        <div className="text-center">
-          <Badge variant="secondary" className="mb-2 flex items-center gap-1"><Sword className="w-3 h-3" /> Combat</Badge>
-          <p className="text-xs text-muted-foreground">Turn-based battles</p>
-        </div>
-        <div className="text-center">
-          <Badge variant="secondary" className="mb-2 flex items-center gap-1"><ScrollText className="w-3 h-3" /> Quests</Badge>
-          <p className="text-xs text-muted-foreground">Epic adventures</p>
-        </div>
-        <div className="text-center">
-          <Badge variant="secondary" className="mb-2 flex items-center gap-1"><Package className="w-3 h-3" /> Inventory</Badge>
-          <p className="text-xs text-muted-foreground">Collect & manage</p>
-        </div>
-      </div>
     </div>
   );
 }
