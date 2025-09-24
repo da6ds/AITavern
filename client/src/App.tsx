@@ -3,6 +3,9 @@ import { QueryClientProvider, useQuery, useMutation } from "@tanstack/react-quer
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { TooltipProvider as CustomTooltipProvider } from "@/components/TooltipProvider";
+import SettingsDropdown from "@/components/SettingsDropdown";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 
@@ -440,7 +443,7 @@ function GameApp() {
               campaignId={campaign?.id}
             />
           </div>
-          <ThemeToggle />
+          <SettingsDropdown />
         </div>
       </div>
       
@@ -508,10 +511,14 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <GameApp />
-          <Toaster />
-        </TooltipProvider>
+        <ThemeProvider defaultTheme="dark">
+          <TooltipProvider>
+            <CustomTooltipProvider>
+              <GameApp />
+              <Toaster />
+            </CustomTooltipProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
