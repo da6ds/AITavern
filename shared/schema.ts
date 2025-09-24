@@ -76,9 +76,20 @@ export const enemies = pgTable("enemies", {
   abilities: text("abilities").array(), // Special abilities
 });
 
-// Game State Schema
+// Campaign Schema
+export const campaigns = pgTable("campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description").default("").notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  lastPlayed: text("last_played").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  isActive: boolean("is_active").default(false).notNull(),
+});
+
+// Game State Schema (now linked to campaigns)
 export const gameState = pgTable("game_state", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id"),
   currentScene: text("current_scene").notNull(),
   inCombat: boolean("in_combat").default(false).notNull(),
   currentTurn: text("current_turn"),
@@ -93,6 +104,7 @@ export const insertItemSchema = createInsertSchema(items);
 export const insertMessageSchema = createInsertSchema(messages);
 export const insertEnemySchema = createInsertSchema(enemies);
 export const insertGameStateSchema = createInsertSchema(gameState);
+export const insertCampaignSchema = createInsertSchema(campaigns);
 
 // Update schemas for partial updates
 export const updateCharacterSchema = insertCharacterSchema.omit({ name: true, class: true }).partial();
@@ -100,6 +112,7 @@ export const updateQuestSchema = insertQuestSchema.partial();
 export const updateItemSchema = insertItemSchema.partial();
 export const updateEnemySchema = insertEnemySchema.partial();
 export const updateGameStateSchema = insertGameStateSchema.partial();
+export const updateCampaignSchema = insertCampaignSchema.partial();
 
 // Types
 export type Character = typeof characters.$inferSelect;
@@ -108,6 +121,7 @@ export type Item = typeof items.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Enemy = typeof enemies.$inferSelect;
 export type GameState = typeof gameState.$inferSelect;
+export type Campaign = typeof campaigns.$inferSelect;
 
 export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
 export type InsertQuest = z.infer<typeof insertQuestSchema>;
@@ -115,6 +129,7 @@ export type InsertItem = z.infer<typeof insertItemSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type InsertEnemy = z.infer<typeof insertEnemySchema>;
 export type InsertGameState = z.infer<typeof insertGameStateSchema>;
+export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 
 // Legacy user schema for compatibility
 export const users = pgTable("users", {

@@ -9,11 +9,13 @@ import {
   insertMessageSchema,
   insertEnemySchema,
   insertGameStateSchema,
+  insertCampaignSchema,
   updateEnemySchema,
   type Character,
   type Quest,
   type Item,
-  type Enemy
+  type Enemy,
+  type Campaign
 } from "@shared/schema";
 import { z } from "zod";
 import { aiService } from "./aiService";

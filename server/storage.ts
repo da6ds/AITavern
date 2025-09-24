@@ -12,7 +12,9 @@ import {
   type Enemy,
   type InsertEnemy,
   type GameState,
-  type InsertGameState
+  type InsertGameState,
+  type Campaign,
+  type InsertCampaign
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -56,6 +58,15 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   clearMessages(): Promise<void>;
   
+  // Campaign management
+  getCampaigns(): Promise<Campaign[]>;
+  getCampaign(id: string): Promise<Campaign | undefined>;
+  getActiveCampaign(): Promise<Campaign | undefined>;
+  createCampaign(campaign: InsertCampaign): Promise<Campaign>;
+  updateCampaign(id: string, updates: Partial<Campaign>): Promise<Campaign | null>;
+  deleteCampaign(id: string): Promise<boolean>;
+  setActiveCampaign(id: string): Promise<Campaign | null>;
+  
   // Game state management
   getGameState(): Promise<GameState | undefined>;
   createGameState(state: InsertGameState): Promise<GameState>;
@@ -70,6 +81,8 @@ export class MemStorage implements IStorage {
   private enemies: Map<string, Enemy>;
   private messages: Message[];
   private gameState: GameState | undefined;
+  private campaigns: Map<string, Campaign>;
+  private activeCampaignId: string | null;
 
   constructor() {
     this.users = new Map();
@@ -77,6 +90,8 @@ export class MemStorage implements IStorage {
     this.items = new Map();
     this.enemies = new Map();
     this.messages = [];
+    this.campaigns = new Map();
+    this.activeCampaignId = null;
   }
 
   async init(): Promise<void> {
@@ -151,6 +166,7 @@ export class MemStorage implements IStorage {
     if (!this.gameState) {
       this.gameState = {
         id: randomUUID(),
+        campaignId: null, // Default campaign support
         currentScene: 'Starting Village',
         inCombat: false,
         currentTurn: null,
@@ -458,6 +474,7 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const newGameState: GameState = {
       id,
+      campaignId: state.campaignId ?? null,
       currentScene: state.currentScene,
       inCombat: state.inCombat ?? false,
       currentTurn: state.currentTurn ?? null,
@@ -535,6 +552,70 @@ export class MemStorage implements IStorage {
 
   async deleteEnemy(id: string): Promise<boolean> {
     return this.enemies.delete(id);
+  }
+
+  // Campaign management
+  async getCampaigns(): Promise<Campaign[]> {
+    return Array.from(this.campaigns.values());
+  }
+
+  async getCampaign(id: string): Promise<Campaign | undefined> {
+    return this.campaigns.get(id);
+  }
+
+  async getActiveCampaign(): Promise<Campaign | undefined> {
+    if (!this.activeCampaignId) return undefined;
+    return this.campaigns.get(this.activeCampaignId);
+  }
+
+  async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
+    const id = randomUUID();
+    const newCampaign: Campaign = { 
+      ...campaign, 
+      id,
+      createdAt: new Date().toISOString(),
+      lastPlayed: new Date().toISOString(),
+      isActive: false
+    };
+    this.campaigns.set(id, newCampaign);
+    return newCampaign;
+  }
+
+  async updateCampaign(id: string, updates: Partial<Campaign>): Promise<Campaign | null> {
+    const campaign = this.campaigns.get(id);
+    if (!campaign) return null;
+    
+    const updatedCampaign = { ...campaign, ...updates };
+    this.campaigns.set(id, updatedCampaign);
+    return updatedCampaign;
+  }
+
+  async deleteCampaign(id: string): Promise<boolean> {
+    if (this.activeCampaignId === id) {
+      this.activeCampaignId = null;
+    }
+    return this.campaigns.delete(id);
+  }
+
+  async setActiveCampaign(id: string): Promise<Campaign | null> {
+    const campaign = this.campaigns.get(id);
+    if (!campaign) return null;
+    
+    // Deactivate all campaigns
+    for (const [campaignId, camp] of this.campaigns) {
+      this.campaigns.set(campaignId, { ...camp, isActive: false });
+    }
+    
+    // Activate the selected campaign
+    const updatedCampaign = { 
+      ...campaign, 
+      isActive: true, 
+      lastPlayed: new Date().toISOString() 
+    };
+    this.campaigns.set(id, updatedCampaign);
+    this.activeCampaignId = id;
+    
+    return updatedCampaign;
   }
 }
 
