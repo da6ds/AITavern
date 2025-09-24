@@ -858,6 +858,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Campaign routes
+  app.get("/api/campaigns", async (_req, res) => {
+    try {
+      const campaigns = await storage.getCampaigns();
+      res.json(campaigns);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      res.status(500).json({ error: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.get("/api/campaigns/active", async (_req, res) => {
+    try {
+      const campaign = await storage.getActiveCampaign();
+      if (!campaign) {
+        return res.status(404).json({ error: "No active campaign" });
+      }
+      res.json(campaign);
+    } catch (error) {
+      console.error('Error fetching active campaign:', error);
+      res.status(500).json({ error: "Failed to fetch active campaign" });
+    }
+  });
+
+  app.post("/api/campaigns", async (req, res) => {
+    try {
+      const result = insertCampaignSchema.omit({ id: true, createdAt: true, lastPlayed: true, isActive: true }).safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid campaign data", details: result.error.errors });
+      }
+      
+      const campaign = await storage.createCampaign(result.data);
+      res.json(campaign);
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      res.status(500).json({ error: "Failed to create campaign" });
+    }
+  });
+
+  app.patch("/api/campaigns/:id/activate", async (req, res) => {
+    try {
+      const campaign = await storage.setActiveCampaign(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      res.json(campaign);
+    } catch (error) {
+      console.error('Error activating campaign:', error);
+      res.status(500).json({ error: "Failed to activate campaign" });
+    }
+  });
+
+  app.delete("/api/campaigns/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteCampaign(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      res.status(500).json({ error: "Failed to delete campaign" });
+    }
+  });
+
+  app.post("/api/campaigns/:id/reset-rounds", async (req, res) => {
+    try {
+      const campaign = await storage.getCampaign(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ error: "Campaign not found" });
+      }
+      
+      const gameState = await storage.getGameState();
+      if (gameState) {
+        await storage.updateGameState({
+          turnCount: 0,
+          currentTurn: null,
+          combatId: null,
+          inCombat: false
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error resetting rounds:', error);
+      res.status(500).json({ error: "Failed to reset rounds" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -571,7 +571,8 @@ export class MemStorage implements IStorage {
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
     const id = randomUUID();
     const newCampaign: Campaign = { 
-      ...campaign, 
+      ...campaign,
+      description: campaign.description || '',
       id,
       createdAt: new Date().toISOString(),
       lastPlayed: new Date().toISOString(),
@@ -602,9 +603,9 @@ export class MemStorage implements IStorage {
     if (!campaign) return null;
     
     // Deactivate all campaigns
-    for (const [campaignId, camp] of this.campaigns) {
+    Array.from(this.campaigns.entries()).forEach(([campaignId, camp]) => {
       this.campaigns.set(campaignId, { ...camp, isActive: false });
-    }
+    });
     
     // Activate the selected campaign
     const updatedCampaign = { 
