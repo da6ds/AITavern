@@ -113,6 +113,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Character portrait generation
+  const portraitGenerationSchema = z.object({
+    appearance: z.string().min(1).max(500),
+    name: z.string().min(1).max(100)
+  });
+  
+  app.post("/api/character/generate-portrait", async (req, res) => {
+    try {
+      const result = portraitGenerationSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid portrait generation data", details: result.error.errors });
+      }
+
+      const { appearance, name } = result.data;
+      const portraitUrl = await aiService.generateCharacterPortrait(name, appearance);
+      
+      res.json({ url: portraitUrl });
+    } catch (error) {
+      console.error('Error generating character portrait:', error);
+      res.status(500).json({ error: 'Failed to generate character portrait' });
+    }
+  });
+
   // Enemy routes
   app.get("/api/enemies", async (req, res) => {
     try {

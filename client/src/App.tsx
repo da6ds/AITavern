@@ -1,7 +1,9 @@
 import { queryClient, apiRequest } from "./lib/queryClient";
 import { QueryClientProvider, useQuery, useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 
 // Components
@@ -15,13 +17,16 @@ import StartMenu from "./components/StartMenu";
 import UserGuide from "./components/UserGuide";
 import WelcomeScreen from "./components/WelcomeScreen";
 import DemoTooltip from "./components/DemoTooltip";
+import ThemeToggle from "./components/ThemeToggle";
+import CharacterCreation from "./components/CharacterCreation";
 import { useTooltips } from "./hooks/useTooltips";
+import { useNotifications } from "./hooks/useNotifications";
 
 // Types
 import type { Character, Quest, Item, Message, Enemy, GameState } from "@shared/schema";
 
 type TabType = "character" | "quests" | "inventory" | "chat";
-type ViewType = "welcome" | "startMenu" | "userGuide" | "game";
+type ViewType = "welcome" | "startMenu" | "userGuide" | "characterCreation" | "game";
 
 function GameApp() {
   const [currentView, setCurrentView] = useState<ViewType>("welcome");
@@ -40,6 +45,9 @@ function GameApp() {
     getCurrentDemoStep,
     shouldShowDemo
   } = useTooltips();
+
+  // Notification system for badges
+  const { hasNotification, markTabAsVisited, addNotification } = useNotifications();
 
   // Check if we should show welcome screen for returning users
   useEffect(() => {
@@ -207,6 +215,31 @@ function GameApp() {
   // Active quest count for navigation badge
   const activeQuestCount = quests.filter(q => q.status === 'active').length;
   
+  // Initialize notifications for new users to show badges
+  useEffect(() => {
+    if (activeQuestCount > 0 && !hasNotification('quests')) {
+      addNotification({ 
+        tabId: 'quests', 
+        type: 'info', 
+        count: activeQuestCount, 
+        message: 'New quests available' 
+      });
+    }
+    if (items.length > 0 && !hasNotification('inventory')) {
+      addNotification({ 
+        tabId: 'inventory', 
+        type: 'info', 
+        count: items.length, 
+        message: 'Items in inventory' 
+      });
+    }
+  }, [activeQuestCount, items.length, hasNotification, addNotification]);
+
+  // Mark tabs as visited when they become active (fixes notification clearing)
+  useEffect(() => {
+    markTabAsVisited(activeTab);
+  }, [activeTab, markTabAsVisited]);
+  
   // Get page content based on active tab
   const getPageContent = () => {
     switch (activeTab) {
@@ -280,10 +313,7 @@ function GameApp() {
     }
   };
   
-  // Set dark mode by default for fantasy feel
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
+  // Theme is now managed by ThemeToggle component
   
   // Handle different views
   if (currentView === "welcome") {
@@ -308,6 +338,7 @@ function GameApp() {
       <StartMenu 
         onStartGame={() => setCurrentView("game")}
         onShowGuide={() => setCurrentView("userGuide")}
+        onCreateCharacter={() => setCurrentView("characterCreation")}
       />
     );
   }
@@ -318,29 +349,55 @@ function GameApp() {
     );
   }
 
+  if (currentView === "characterCreation") {
+    return (
+      <CharacterCreation 
+        onComplete={(characterData) => {
+          console.log('Character created:', characterData);
+          setCurrentView("game");
+        }}
+        onBack={() => setCurrentView("startMenu")}
+      />
+    );
+  }
+
   // Main game view
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Page Title */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
-        <div className="flex items-center justify-center h-16 px-4">
-          <h1 className="font-serif text-xl text-primary" data-testid="app-title">
+        <div className="flex items-center justify-between h-16 px-3 sm:px-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentView("startMenu")}
+            className="text-muted-foreground"
+            data-testid="button-return-menu"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Menu
+          </Button>
+          <h1 className="font-serif text-lg sm:text-xl text-primary" data-testid="app-title">
             ⚔️ AI Dungeon Master
           </h1>
+          <ThemeToggle />
         </div>
       </div>
       
       {/* Main Content */}
-      <main className="px-4 py-6">
+      <main className="px-3 sm:px-4 py-4 sm:py-6">
         {getPageContent()}
       </main>
       
       {/* Bottom Navigation */}
       <NavigationTabs 
         activeTab={activeTab}
-        onTabChange={setActiveTab}
-        questCount={activeQuestCount}
-        itemCount={items.length}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          markTabAsVisited(tab);
+        }}
+        questCount={hasNotification('quests') ? activeQuestCount : 0}
+        itemCount={hasNotification('inventory') ? items.length : 0}
         unreadMessages={0}
       />
       

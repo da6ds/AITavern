@@ -40,11 +40,12 @@ export default function DemoTooltip({
       let top = targetRect.bottom + 10;
       let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
 
-      // Adjust if tooltip goes off screen
-      if (left < 10) {
-        left = 10;
-      } else if (left + tooltipRect.width > viewportWidth - 10) {
-        left = viewportWidth - tooltipRect.width - 10;
+      // Adjust if tooltip goes off screen (more margin on mobile)
+      const margin = viewportWidth < 640 ? 16 : 10;
+      if (left < margin) {
+        left = margin;
+      } else if (left + tooltipRect.width > viewportWidth - margin) {
+        left = viewportWidth - tooltipRect.width - margin;
       }
 
       // Position above if no space below
@@ -75,7 +76,7 @@ export default function DemoTooltip({
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className="fixed z-50 max-w-xs"
+        className="fixed z-50 max-w-xs sm:max-w-sm mx-2"
         style={{ top: position.top, left: position.left }}
         data-testid={`demo-tooltip-${step.id}`}
       >

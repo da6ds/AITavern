@@ -64,7 +64,7 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
           <CardTitle className="text-lg font-serif">Ability Scores</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
             <StatDisplay label="STR" value={character.strength} />
             <StatDisplay label="DEX" value={character.dexterity} />
             <StatDisplay label="CON" value={character.constitution} />

@@ -406,6 +406,54 @@ Respond as ${npcName} would, staying true to their character and the situation.`
       return "The NPC seems distracted and doesn't respond.";
     }
   }
+
+  async generateCharacterPortrait(name: string, appearance: string): Promise<string> {
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OpenAI API key not configured');
+      }
+
+      // Sanitize input to prevent prompt injection
+      const sanitizedName = name.replace(/[^\w\s-]/g, '').trim();
+      const sanitizedAppearance = appearance.replace(/[^\w\s.,'-]/g, '').trim();
+
+      if (!sanitizedName || !sanitizedAppearance) {
+        throw new Error('Invalid name or appearance description');
+      }
+
+      // Create a detailed prompt for character portrait generation
+      const prompt = `A high-quality fantasy character portrait of ${sanitizedName}. ${sanitizedAppearance}. Digital art style, detailed fantasy character portrait, professional artwork, dramatic lighting, fantasy RPG character art style.`;
+
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+      });
+
+      if (!response.data || response.data.length === 0 || !response.data[0].url) {
+        throw new Error('No image generated or invalid response');
+      }
+
+      return response.data[0].url;
+    } catch (error: any) {
+      console.error('Error generating character portrait:', error);
+      
+      // Handle specific error types
+      if (error?.status === 429) {
+        throw new Error('Image generation rate limit exceeded. Please try again in a few moments.');
+      } else if (error?.status === 401) {
+        throw new Error('AI service configuration error. Please contact support.');
+      } else if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') {
+        throw new Error('Unable to connect to image generation service. Please check your internet connection.');
+      } else if (error.message?.includes('content policy')) {
+        throw new Error('Character description violates content policy. Please try a different description.');
+      } else {
+        throw new Error('Failed to generate character portrait. Please try again.');
+      }
+    }
+  }
 }
 
 export const aiService = new TTRPGAIService();
