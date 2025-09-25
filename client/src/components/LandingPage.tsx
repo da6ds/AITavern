@@ -1,13 +1,52 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Gamepad2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 interface LandingPageProps {
   onLogin: () => void;
 }
 
 export default function LandingPage({ onLogin }: LandingPageProps) {
+  const [, setLocation] = useLocation();
+  const [demoMode, setDemoMode] = useState(false);
+  const [isStartingDemo, setIsStartingDemo] = useState(false);
+
+  // Check if demo mode is enabled
+  const { data: demoStatus, isLoading: isDemoStatusLoading } = useQuery<{enabled: boolean}>({
+    queryKey: ['/api/demo/status'],
+    enabled: true,
+  });
+
+  const handleStartDemo = async () => {
+    try {
+      setIsStartingDemo(true);
+      const response = await apiRequest('POST', '/api/demo/start');
+      if (response.ok) {
+        // Navigate to the welcome page
+        setLocation('/');
+      }
+    } catch (error) {
+      console.error('Failed to start demo mode:', error);
+    } finally {
+      setIsStartingDemo(false);
+    }
+  };
+
+  const handleMainCTA = () => {
+    if (demoMode) {
+      handleStartDemo();
+    } else {
+      onLogin();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-green-50 dark:from-amber-950 dark:to-green-950">
       <div className="container mx-auto px-4 py-8">
@@ -56,17 +95,37 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Demo Mode Toggle - only show if demo is enabled */}
+              {demoStatus?.enabled && !isDemoStatusLoading && (
+                <div className="flex items-center justify-center space-x-2 mb-4">
+                  <Label htmlFor="demo-mode" className="text-sm">Demo Mode</Label>
+                  <Switch
+                    id="demo-mode"
+                    checked={demoMode}
+                    onCheckedChange={setDemoMode}
+                    data-testid="switch-demo-mode"
+                  />
+                </div>
+              )}
+              
               <Button 
-                onClick={onLogin}
+                onClick={handleMainCTA}
                 size="lg"
                 className="w-full bg-gradient-to-r from-amber-600 to-green-600 hover:from-amber-700 hover:to-green-700"
                 data-testid="button-start-adventure"
+                disabled={isStartingDemo}
               >
-                Ready to Begin Your Adventure
+                {isStartingDemo ? "Starting Demo..." : "Ready to Begin Your Adventure"}
               </Button>
               <div className="text-sm text-muted-foreground">
-                <p>New to Skunk Tales? Create your account and first character.</p>
-                <p>Returning adventurer? Sign in to continue your journey.</p>
+                {demoMode ? (
+                  <p>Try the adventure demo without creating an account. Your progress won't be saved.</p>
+                ) : (
+                  <>
+                    <p>New to Skunk Tales? Create your account and first character.</p>
+                    <p>Returning adventurer? Sign in to continue your journey.</p>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

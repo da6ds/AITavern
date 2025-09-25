@@ -70,28 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware setup
   await setupAuth(app);
 
-  // Default API protection - all /api routes require authentication except for auth endpoints
-  app.use('/api', (req, res, next) => {
-    const openEndpoints = new Set([
-      '/api/login',
-      '/api/callback', 
-      '/api/logout',
-      '/api/debug/check',
-      '/api/demo/status',
-      '/api/demo/start'
-    ]);
-    
-    if (openEndpoints.has(req.path)) {
-      return next();
-    }
-    
-    return isAuthenticated(req, res, next);
-  });
-
-  // Initialize storage with default data
-  await storage.init();
-
-  // Demo mode endpoints
+  // Demo mode endpoints - must be defined before auth protection
   app.get("/api/demo/status", (_req, res) => {
     const enabled = process.env.DEMO_MODE_ENABLED === 'true';
     res.json({ enabled });
@@ -120,6 +99,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("✅ Demo session started for:", req.session.demoUserId);
     res.json({ success: true, demoUserId: req.session.demoUserId });
   });
+
+  // Default API protection - all /api routes require authentication except for auth endpoints
+  app.use('/api', (req, res, next) => {
+    const openEndpoints = new Set([
+      '/api/login',
+      '/api/callback', 
+      '/api/logout',
+      '/api/debug/check',
+      '/api/demo/status',
+      '/api/demo/start'
+    ]);
+    
+    if (openEndpoints.has(req.path)) {
+      return next();
+    }
+    
+    return isAuthenticated(req, res, next);
+  });
+
+  // Initialize storage with default data
+  await storage.init();
 
   app.get("/api/debug/check", (_req, res) => {
     console.log("✅ /api/debug/check registered & hit");
