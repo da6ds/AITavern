@@ -24,7 +24,7 @@ export interface AIResponse {
 
 export class TTRPGAIService {
   private getSystemPrompt(): string {
-    return `You are an experienced Dungeon Master running an immersive D&D-style fantasy TTRPG. 
+    return `You are an experienced Adventure Guide running an immersive cozy fantasy TTRPG. 
 
 CORE ROLE:
 - Act as both the DM and all NPCs the player encounters
@@ -420,7 +420,7 @@ QUEST PROGRESSION RULES:
         messages: [
           {
             role: "system",
-            content: "You are a D&D Dungeon Master creating follow-up quests that continue story arcs."
+            content: "You are a cozy Adventure Guide creating follow-up quests that continue story arcs."
           },
           {
             role: "user",
@@ -463,7 +463,7 @@ QUEST PROGRESSION RULES:
         messages: [
           {
             role: "system",
-            content: "You are a D&D Dungeon Master creating engaging quests for a player."
+            content: "You are a cozy Adventure Guide creating engaging quests for a player."
           },
           {
             role: "user",

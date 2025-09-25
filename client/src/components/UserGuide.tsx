@@ -11,8 +11,8 @@ export default function UserGuide({ onBack }: UserGuideProps) {
   const guideCards = [
     {
       icon: <MessageSquare className="w-6 h-6 text-primary" />,
-      title: "Chat with the AI Dungeon Master",
-      description: "Your AI Dungeon Master will guide your adventure. Simply type what you want to do and the DM will respond with the story.",
+      title: "Chat with your AI Guide",
+      description: "Your AI companion will guide your adventure. Simply type what you want to do and your guide will respond with the story.",
       tips: [
         "Describe your actions in detail",
         "Ask questions about your surroundings", 
@@ -83,8 +83,8 @@ export default function UserGuide({ onBack }: UserGuideProps) {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground leading-relaxed">
-            This AI-powered tabletop RPG combines the storytelling of traditional D&D with modern mobile gaming. 
-            Your AI Dungeon Master creates dynamic stories based on your choices and actions.
+            This cozy AI adventure combines magical storytelling with modern mobile gaming. 
+            Your AI companion creates enchanting stories based on your choices and actions.
           </p>
         </CardContent>
       </Card>

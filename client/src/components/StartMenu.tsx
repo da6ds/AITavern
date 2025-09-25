@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HelpCircle, Settings, Sword, Scroll, UserPlus, Map } from "lucide-react";
+import { HelpCircle, Settings, Sparkles, UserPlus, Map } from "lucide-react";
 import MultipleAdventures from "./MultipleAdventures";
 
 interface StartMenuProps {
@@ -22,15 +22,18 @@ export default function StartMenu({
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       {/* Hero Section */}
       <div className="text-center mb-8">
-        <div className="mb-4">
-          <Sword className="w-16 h-16 mx-auto text-primary mb-2" />
-          <Scroll className="w-12 h-12 mx-auto text-accent -mt-8 ml-8" />
+        <div className="mb-4 relative">
+          {/* Friendly Skunk Placeholder */}
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-800 to-gray-600 rounded-full flex items-center justify-center mb-2 shadow-lg">
+            <div className="text-white text-2xl">🦨</div>
+          </div>
+          <Sparkles className="w-6 h-6 absolute top-0 right-1/2 transform translate-x-8 text-accent animate-pulse" />
         </div>
         <h1 className="font-serif text-4xl text-primary mb-2" data-testid="game-title">
-          AI Dungeon Master
+          Skunk Tales
         </h1>
         <p className="text-muted-foreground text-lg max-w-sm mx-auto leading-relaxed">
-          Embark on epic adventures powered by artificial intelligence. Your story awaits.
+          Cozy AI adventures await. Start your magical journey today.
         </p>
       </div>
 

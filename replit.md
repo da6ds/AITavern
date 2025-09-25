@@ -1,10 +1,10 @@
-# AI TTRPG Mobile Game
+# Skunk Tales - Cozy AI Adventures
 
 ## Overview
 
-This is an AI-powered tabletop role-playing game (TTRPG) built as a mobile-first web application. The game features an intelligent Dungeon Master powered by OpenAI's GPT model that creates dynamic storylines, manages combat encounters, and controls NPCs. Players interact through a chat interface while managing their character, quests, and inventory through dedicated mobile-optimized screens.
+Skunk Tales is a cozy AI-powered tabletop role-playing game (TTRPG) built as a mobile-first web application. The game features an intelligent AI companion that creates dynamic storylines, manages adventures, and guides players through magical worlds. Players interact through a chat interface while managing their character, quests, and inventory through dedicated mobile-optimized screens.
 
-The application combines the immersive storytelling of traditional D&D with modern mobile gaming UI patterns, featuring real-time AI responses, turn-based combat, and persistent game state management.
+The application combines the immersive storytelling of traditional tabletop gaming with modern mobile gaming UI patterns, featuring real-time AI responses, character progression, and persistent adventure state management.
 
 ## User Preferences
 
@@ -34,17 +34,17 @@ Preferred communication style: Simple, everyday language.
 - **Message History**: Persistent chat logs with support for DM, player, and NPC messages
 
 ### Game Logic
-- **AI Game Master**: Contextual responses based on character stats, current quests, and game state
-- **Dynamic Quest Generation**: AI-driven quest creation and progression
-- **Combat Management**: Automated turn-based combat with strategic AI enemy behavior
-- **Game State Persistence**: Continuous save system maintaining all game progress
+- **AI Adventure Guide**: Contextual responses based on character stats, current quests, and game state
+- **Dynamic Story Generation**: AI-driven adventure creation and progression
+- **Character Management**: Automated character progression with meaningful choices
+- **Adventure State Persistence**: Continuous save system maintaining all adventure progress
 
 ## External Dependencies
 
 ### Core Dependencies
 - **@neondatabase/serverless**: PostgreSQL database connectivity
 - **drizzle-orm**: Type-safe database ORM with schema validation
-- **OpenAI API**: GPT-5 integration for AI game master functionality
+- **OpenAI API**: GPT-5 integration for AI adventure guide functionality
 - **@tanstack/react-query**: Client-side data fetching and caching
 
 ### UI/UX Libraries

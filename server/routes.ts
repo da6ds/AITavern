@@ -840,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Provide a fallback response when AI is unavailable
         aiResponse = {
           content:
-            "The Dungeon Master seems distracted by mystical forces and doesn't respond clearly. The adventure continues, but the AI storytelling is temporarily unavailable.",
+            "Your adventure guide seems distracted by mystical forces and doesn't respond clearly. The adventure continues, but the AI storytelling is temporarily unavailable.",
           sender: "dm" as const,
           senderName: null,
         };

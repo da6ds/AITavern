@@ -38,7 +38,7 @@ export default function WelcomeScreen({
               Welcome, Adventurer!
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground px-2 sm:px-0">
-              Your AI-powered tabletop adventure awaits. Create epic stories with your intelligent Dungeon Master.
+              Your cozy AI adventure awaits. Create magical stories with your friendly AI companion.
             </p>
           </div>
         </div>
@@ -123,8 +123,8 @@ export default function WelcomeScreen({
           <div className="text-xs text-muted-foreground space-y-1">
             <p className="font-medium">What you'll experience:</p>
             <div className="flex justify-center gap-4">
-              <span>• AI Dungeon Master</span>
-              <span>• Dynamic Stories</span>
+              <span>• AI Companion</span>
+              <span>• Cozy Stories</span>
               <span>• Multiple Adventures</span>
             </div>
           </div>
