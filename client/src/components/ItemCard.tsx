@@ -24,7 +24,7 @@ export default function ItemCard({ item, onTap, onLongPress, className = "", isD
   const getRarityColor = () => {
     switch (item.rarity) {
       case "legendary": return "border-yellow-400 bg-yellow-400/10";
-      case "epic": return "border-purple-400 bg-purple-400/10";
+      case "epic": return "border-amber-400 bg-amber-400/10";
       case "rare": return "border-blue-400 bg-blue-400/10";
       case "uncommon": return "border-green-400 bg-green-400/10";
       default: return "border-muted bg-muted/20";

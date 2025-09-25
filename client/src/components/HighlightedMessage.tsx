@@ -11,8 +11,8 @@ interface HighlightedMessageProps {
 const nameColors = [
   "text-primary font-medium bg-primary/10",
   "text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-100/50 dark:bg-emerald-900/20",
-  "text-purple-600 dark:text-purple-400 font-medium bg-purple-100/50 dark:bg-purple-900/20",
-  "text-orange-600 dark:text-orange-400 font-medium bg-orange-100/50 dark:bg-orange-900/20",
+  "text-green-600 dark:text-green-400 font-medium bg-green-100/50 dark:bg-green-900/20",
+  "text-amber-600 dark:text-amber-400 font-medium bg-amber-100/50 dark:bg-amber-900/20",
   "text-blue-600 dark:text-blue-400 font-medium bg-blue-100/50 dark:bg-blue-900/20",
   "text-rose-600 dark:text-rose-400 font-medium bg-rose-100/50 dark:bg-rose-900/20"
 ];
