@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Mic, MicOff, Send, Swords, Eye, MessageSquare, Loader2, User, UserCheck } from "lucide-react";
+import { Mic, MicOff, Send, Swords, Eye, MessageSquare, Loader2, User, UserCheck, HelpCircle, RotateCcw, Clock, BookOpen, AlertTriangle } from "lucide-react";
 import HighlightedMessage from "./HighlightedMessage";
 import type { Message, Character } from "@shared/schema";
 import { useState, useRef, useEffect } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -33,6 +34,14 @@ export default function ChatInterface({
   const [isDirectDM, setIsDirectDM] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
+  // DM Help preset buttons
+  const dmPresets = [
+    { label: "Recap my last session", action: "recap_session", icon: <RotateCcw className="w-4 h-4" /> },
+    { label: "What's happening right now?", action: "current_status", icon: <Clock className="w-4 h-4" /> },
+    { label: "Summarize the quest", action: "summarize_quest", icon: <BookOpen className="w-4 h-4" /> },
+    { label: "Fix a misunderstanding", action: "fix_misunderstanding", icon: <AlertTriangle className="w-4 h-4" /> },
+  ];
+  
   const quickActions = [
     { label: "Attack", action: "attack", icon: <Swords className="w-4 h-4" /> },
     { label: "Investigate", action: "investigate", icon: <Eye className="w-4 h-4" /> },
@@ -58,6 +67,21 @@ export default function ChatInterface({
     console.log('Quick action triggered:', action);
   };
   
+  const handleDMPreset = (preset: typeof dmPresets[0]) => {
+    const presetMessages = {
+      recap_session: "Please give me a recap of my last session and what has happened so far in our adventure.",
+      current_status: "What's happening right now? Where am I and what's the current situation?",
+      summarize_quest: "Can you summarize my current quest objectives and any important details I should remember?",
+      fix_misunderstanding: "I think there might be a misunderstanding about something that happened. Can you help clarify the current situation?"
+    };
+    
+    const message = presetMessages[preset.action as keyof typeof presetMessages];
+    if (message) {
+      onSendMessage?.(message, true); // Always send as DM Help
+      console.log('DM preset triggered:', preset.action);
+    }
+  };
+  
   const handleToggleListening = () => {
     onToggleListening?.();
     console.log('Speech recognition toggled:', !isListening);
@@ -81,20 +105,36 @@ export default function ChatInterface({
           <CardTitle className="font-serif text-xl">Adventure Chat</CardTitle>
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              {isDirectDM ? "Direct DM communication" : "In-character roleplay"}
+              {isDirectDM ? "Message the AI DM for clarifications, recaps, or fixes" : "Talk as your character. Your words shape the story."}
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="w-4 h-4" />
-                <span className="text-muted-foreground">In Character</span>
-                <Switch
-                  checked={isDirectDM}
-                  onCheckedChange={setIsDirectDM}
-                  data-testid="switch-direct-dm"
-                />
-                <span className="text-muted-foreground">Direct DM</span>
-                <UserCheck className="w-4 h-4" />
-              </div>
+              <TooltipProvider>
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="w-4 h-4" />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-muted-foreground cursor-help">Roleplay</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Talk as your character. Your words shape the story.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Switch
+                    checked={isDirectDM}
+                    onCheckedChange={setIsDirectDM}
+                    data-testid="switch-chat-mode"
+                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-muted-foreground cursor-help">DM Help</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Message the AI DM for clarifications, recaps, or fixes.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <HelpCircle className="w-4 h-4" />
+                </div>
+              </TooltipProvider>
             </div>
           </div>
         </CardHeader>
@@ -108,7 +148,7 @@ export default function ChatInterface({
                   <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>Welcome to your adventure!</p>
                   <p className="text-sm">Your character and world are ready. Start by speaking to your AI companion or using quick actions below!</p>
-                  <p className="text-xs mt-2 opacity-75">Tip: Visit other tabs to customize your character, check quests, and manage inventory anytime.</p>
+                  <p className="text-xs mt-2 opacity-75">Tip: Try switching to DM Help and tap "Recap my last session" to get oriented, or visit other tabs to customize your character.</p>
                 </div>
               ) : (
                 messages.map((message) => (
@@ -143,24 +183,43 @@ export default function ChatInterface({
             </div>
           </ScrollArea>
           
-          {/* Quick Actions */}
+          {/* Quick Actions / DM Presets */}
           <div className="space-y-3">
-            <div className="text-sm font-medium text-foreground">Quick Actions</div>
-            <div className="flex gap-2">
-              {quickActions.map((action) => (
-                <Button 
-                  key={action.action}
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleQuickAction(action.action)}
-                  disabled={isLoading}
-                  className="flex-1"
-                  data-testid={`button-quick-action-${action.action}`}
-                >
-                  {action.icon}
-                  {action.label}
-                </Button>
-              ))}
+            <div className="text-sm font-medium text-foreground">
+              {isDirectDM ? "DM Help" : "Quick Actions"}
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {isDirectDM ? (
+                dmPresets.map((preset) => (
+                  <Button 
+                    key={preset.action}
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDMPreset(preset)}
+                    disabled={isLoading}
+                    className="flex-1 min-w-[120px] min-h-[44px] gap-2"
+                    data-testid={`button-dm-preset-${preset.action}`}
+                  >
+                    {preset.icon}
+                    <span className="text-xs">{preset.label}</span>
+                  </Button>
+                ))
+              ) : (
+                quickActions.map((action) => (
+                  <Button 
+                    key={action.action}
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleQuickAction(action.action)}
+                    disabled={isLoading}
+                    className="flex-1 min-h-[44px] gap-2"
+                    data-testid={`button-quick-action-${action.action}`}
+                  >
+                    {action.icon}
+                    {action.label}
+                  </Button>
+                ))
+              )}
             </div>
           </div>
           
@@ -179,7 +238,7 @@ export default function ChatInterface({
             <div className="flex-1 flex gap-2">
               <input
                 type="text"
-                placeholder={isListening ? "Listening..." : isDirectDM ? "Ask the DM directly..." : "Type your in-character message..."}
+                placeholder={isListening ? "Listening..." : isDirectDM ? "Ask the DM for help..." : "Speak as your character..."}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSend()}
