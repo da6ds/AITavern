@@ -29,8 +29,8 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       setIsStartingDemo(true);
       const response = await apiRequest('POST', '/api/demo/start');
       if (response.ok) {
-        // Navigate to the welcome page
-        setLocation('/');
+        // Force a page reload to trigger authentication check with demo session
+        window.location.reload();
       }
     } catch (error) {
       console.error('Failed to start demo mode:', error);

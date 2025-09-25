@@ -136,6 +136,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      // For demo users, return demo user data directly
+      if (userId && userId.startsWith('demo-')) {
+        return res.json({
+          id: userId,
+          email: req.user.claims.email,
+          firstName: req.user.claims.first_name,
+          lastName: req.user.claims.last_name,
+          profileImageUrl: null,
+          claims: req.user.claims
+        });
+      }
+      
+      // For regular users, fetch from storage
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {

@@ -147,17 +147,15 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   // Check for demo mode session
   if (process.env.DEMO_MODE_ENABLED === 'true' && session?.demo === true) {
-    // Ensure demo user claims are set on the request
-    if (!req.user) {
-      (req as any).user = {
-        claims: {
-          sub: session.demoUserId,
-          email: "demo@example.com",
-          first_name: "Demo",
-          last_name: "User"
-        }
-      };
-    }
+    // Always override with demo user claims when in demo mode
+    (req as any).user = {
+      claims: {
+        sub: session.demoUserId,
+        email: "demo@example.com",
+        first_name: "Demo",
+        last_name: "User"
+      }
+    };
     return next();
   }
 
