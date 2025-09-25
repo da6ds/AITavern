@@ -136,7 +136,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/quick-start', isAuthenticated, async (req: any, res) => {
     try {
       // Check if user already has a character
-      const existingCharacter = await storage.getUser(req.user.claims.sub);
+      const userId = req.user.claims.sub;
+      const existingCharacter = await storage.getCharacter(userId);
       if (existingCharacter) {
         // Skip character creation, just initialize default adventure
         const defaultTemplate = {
@@ -158,17 +159,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           inCombat: false,
           currentTurn: null,
           turnCount: 0,
-        });
+        }, userId);
 
         // Get or ensure active campaign for existing character
-        let activeCampaign = await storage.getActiveCampaign();
+        let activeCampaign = await storage.getActiveCampaign(userId);
         if (!activeCampaign) {
           activeCampaign = await storage.createCampaign({
             name: "Your Adventure",
             description: "An epic journey through mystical lands",
             userId: req.user.claims.sub
           });
-          await storage.setActiveCampaign(activeCampaign.id);
+          await storage.setActiveCampaign(activeCampaign.id, userId);
         }
 
         // Create the initial quest
@@ -187,10 +188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // Clear existing messages and create enhanced welcome message
-        await storage.clearMessages();
+        await storage.clearMessages(userId);
         
         // Get character for enhanced message context
-        const character = await storage.getCharacter();
+        const character = await storage.getCharacter(userId);
         
         // Generate enhanced welcome message using AI (with robust fallback)
         let enhancedWelcomeResponse;
@@ -258,8 +259,8 @@ Choose your path, adventurer. Your destiny awaits!`,
         currentMana: 1
       };
 
-      // Get or create active campaign
-      let activeCampaign = await storage.getActiveCampaign();
+      // Get or create active campaign  
+      let activeCampaign = await storage.getActiveCampaign(userId);
       if (!activeCampaign) {
         // Create a default campaign
         activeCampaign = await storage.createCampaign({
@@ -267,7 +268,7 @@ Choose your path, adventurer. Your destiny awaits!`,
           description: "An epic journey through mystical lands",
           userId: req.user.claims.sub
         });
-        await storage.setActiveCampaign(activeCampaign.id);
+        await storage.setActiveCampaign(activeCampaign.id, userId);
       }
 
       // Create character with campaignId
@@ -296,7 +297,7 @@ Choose your path, adventurer. Your destiny awaits!`,
         inCombat: false,
         currentTurn: null,
         turnCount: 0,
-      });
+      }, userId);
 
       // Create the initial quest
       const quest = await storage.createQuest({
@@ -314,7 +315,7 @@ Choose your path, adventurer. Your destiny awaits!`,
       });
 
       // Clear existing messages and create welcome message
-      await storage.clearMessages();
+      await storage.clearMessages(userId);
       const welcomeMessage = await storage.createMessage({
         campaignId: activeCampaign.id,
         content: "Welcome to your adventure, " + character.name + "! " + defaultTemplate.initialScene,
@@ -331,7 +332,7 @@ Choose your path, adventurer. Your destiny awaits!`,
         character,
         quest,
         message: welcomeMessage,
-        gameState: await storage.getGameState(),
+        gameState: await storage.getGameState(userId),
       });
     } catch (error) {
       console.error("Error in quick start:", error);
@@ -366,9 +367,10 @@ Choose your path, adventurer. Your destiny awaits!`,
   });
 
   // Character routes
-  app.get("/api/character", isAuthenticated, async (_req, res) => {
+  app.get("/api/character", isAuthenticated, async (req, res) => {
     try {
-      const character = await storage.getCharacter();
+      const userId = (req as any).user.claims.sub;
+      const character = await storage.getCharacter(userId);
       if (!character) {
         return res.status(404).json({ error: "Character not found" });
       }
@@ -393,7 +395,8 @@ Choose your path, adventurer. Your destiny awaits!`,
       }
 
       // Get the user's active campaign
-      const activeCampaign = await storage.getActiveCampaign();
+      const userId = (req as any).user.claims.sub;
+      const activeCampaign = await storage.getActiveCampaign(userId);
       if (!activeCampaign) {
         return res.status(400).json({ 
           error: "No active campaign found. Please select or create a campaign first." 
@@ -463,6 +466,7 @@ Choose your path, adventurer. Your destiny awaits!`,
       }
 
       const template = result.data;
+      const userId = (req as any).user.claims.sub;
 
       // Update game state with the new adventure
       await storage.updateGameState({
@@ -470,17 +474,17 @@ Choose your path, adventurer. Your destiny awaits!`,
         inCombat: false,
         currentTurn: null,
         turnCount: 0,
-      });
+      }, userId);
 
       // Get or ensure active campaign
-      let activeCampaign = await storage.getActiveCampaign();
+      let activeCampaign = await storage.getActiveCampaign(userId);
       if (!activeCampaign) {
         activeCampaign = await storage.createCampaign({
           name: template.name,
           description: `Adventure in ${template.setting}`,
           userId: (req as any).user.claims.sub
         });
-        await storage.setActiveCampaign(activeCampaign.id);
+        await storage.setActiveCampaign(activeCampaign.id, userId);
       }
 
       // Create the initial quest
@@ -499,10 +503,10 @@ Choose your path, adventurer. Your destiny awaits!`,
       });
 
       // Clear existing messages and generate enhanced welcome message
-      await storage.clearMessages();
+      await storage.clearMessages(userId);
 
       // Get character for enhanced message context
-      const character = await storage.getCharacter();
+      const character = await storage.getCharacter(userId);
       
       // Generate enhanced welcome message using AI (with robust fallback)
       let enhancedWelcomeResponse;
@@ -558,7 +562,7 @@ Choose your path, adventurer. Your destiny awaits!`,
         success: true,
         quest,
         message: welcomeMessage,
-        gameState: await storage.getGameState(),
+        gameState: await storage.getGameState(userId),
       });
     } catch (error) {
       console.error("Error initializing adventure template:", error);
@@ -614,8 +618,9 @@ Choose your path, adventurer. Your destiny awaits!`,
   // Enemy routes
   app.get("/api/enemies", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req as any).user.claims.sub;
       const combatId = req.query.combatId as string | undefined;
-      const enemies = await storage.getEnemies(combatId);
+      const enemies = await storage.getEnemies(combatId, userId);
       res.json(enemies);
     } catch (error) {
       console.error("Error fetching enemies:", error);
@@ -928,9 +933,10 @@ Choose your path, adventurer. Your destiny awaits!`,
   });
 
   // Quest routes
-  app.get("/api/quests", isAuthenticated, async (_req, res) => {
+  app.get("/api/quests", isAuthenticated, async (req, res) => {
     try {
-      const quests = await storage.getQuests();
+      const userId = (req as any).user.claims.sub;
+      const quests = await storage.getQuests(userId);
       res.json(quests);
     } catch (error) {
       console.error("Error fetching quests:", error);
@@ -1002,9 +1008,10 @@ Choose your path, adventurer. Your destiny awaits!`,
   });
 
   // Inventory routes
-  app.get("/api/items", isAuthenticated, async (_req, res) => {
+  app.get("/api/items", isAuthenticated, async (req, res) => {
     try {
-      const items = await storage.getItems();
+      const userId = (req as any).user.claims.sub;
+      const items = await storage.getItems(userId);
       res.json(items);
     } catch (error) {
       console.error("Error fetching items:", error);
@@ -1079,7 +1086,8 @@ Choose your path, adventurer. Your destiny awaits!`,
   app.get("/api/messages", isAuthenticated, async (req, res) => {
     try {
       // Get the active campaign for this user
-      const activeCampaign = await storage.getActiveCampaign();
+      const userId = (req as any).user.claims.sub;
+      const activeCampaign = await storage.getActiveCampaign(userId);
       if (!activeCampaign) {
         return res.json([]); // Return empty array if no active campaign
       }
@@ -1130,9 +1138,10 @@ Choose your path, adventurer. Your destiny awaits!`,
     }
   });
 
-  app.delete("/api/messages", isAuthenticated, async (_req, res) => {
+  app.delete("/api/messages", isAuthenticated, async (req, res) => {
     try {
-      await storage.clearMessages();
+      const userId = (req as any).user.claims.sub;
+      await storage.clearMessages(userId);
       res.json({ success: true });
     } catch (error) {
       console.error("Error clearing messages:", error);
@@ -1141,9 +1150,10 @@ Choose your path, adventurer. Your destiny awaits!`,
   });
 
   // Game state routes
-  app.get("/api/game-state", isAuthenticated, async (_req, res) => {
+  app.get("/api/game-state", isAuthenticated, async (req, res) => {
     try {
-      const gameState = await storage.getGameState();
+      const userId = (req as any).user.claims.sub;
+      const gameState = await storage.getGameState(userId);
       res.json(gameState);
     } catch (error) {
       console.error("Error fetching game state:", error);
@@ -1171,7 +1181,8 @@ Choose your path, adventurer. Your destiny awaits!`,
 
   app.patch("/api/game-state", isAuthenticated, async (req, res) => {
     try {
-      const gameState = await storage.updateGameState(req.body);
+      const userId = (req as any).user.claims.sub;
+      const gameState = await storage.updateGameState(req.body, userId);
       res.json(gameState);
     } catch (error) {
       console.error("Error updating game state:", error);
@@ -1584,9 +1595,10 @@ Choose your path, adventurer. Your destiny awaits!`,
     }
   });
 
-  app.get("/api/campaigns/active", isAuthenticated, async (_req, res) => {
+  app.get("/api/campaigns/active", isAuthenticated, async (req, res) => {
     try {
-      const campaign = await storage.getActiveCampaign();
+      const userId = (req as any).user.claims.sub;
+      const campaign = await storage.getActiveCampaign(userId);
       if (!campaign) {
         return res.status(404).json({ error: "No active campaign" });
       }
@@ -1640,7 +1652,8 @@ Choose your path, adventurer. Your destiny awaits!`,
 
   app.patch("/api/campaigns/:id/activate", isAuthenticated, async (req, res) => {
     try {
-      const campaign = await storage.setActiveCampaign(req.params.id);
+      const userId = (req as any).user.claims.sub;
+      const campaign = await storage.setActiveCampaign(req.params.id, userId);
       if (!campaign) {
         return res.status(404).json({ error: "Campaign not found" });
       }

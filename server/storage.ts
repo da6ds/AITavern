@@ -15,9 +15,20 @@ import {
   type GameState,
   type InsertGameState,
   type Campaign,
-  type InsertCampaign
+  type InsertCampaign,
+  users,
+  characters,
+  campaigns,
+  quests,
+  items,
+  messages,
+  enemies,
+  gameState
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { eq, desc, and } from "drizzle-orm";
 
 // AI TTRPG Game Storage Interface
 export interface IStorage {
@@ -28,54 +39,370 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Character management
-  getCharacter(): Promise<Character | undefined>;
+  getCharacter(userId?: string): Promise<Character | undefined>;
   createCharacter(character: InsertCharacter): Promise<Character>;
   updateCharacter(id: string, updates: Partial<Character>): Promise<Character | null>;
   init(): Promise<void>;
   
   // Quest management
-  getQuests(): Promise<Quest[]>;
+  getQuests(userId?: string): Promise<Quest[]>;
   getQuest(id: string): Promise<Quest | undefined>;
   createQuest(quest: InsertQuest): Promise<Quest>;
   updateQuest(id: string, updates: Partial<Quest>): Promise<Quest | null>;
   deleteQuest(id: string): Promise<boolean>;
   
   // Inventory management
-  getItems(): Promise<Item[]>;
+  getItems(userId?: string): Promise<Item[]>;
   getItem(id: string): Promise<Item | undefined>;
   createItem(item: InsertItem): Promise<Item>;
   updateItem(id: string, updates: Partial<Item>): Promise<Item | null>;
   deleteItem(id: string): Promise<boolean>;
   
   // Enemy management
-  getEnemies(combatId?: string): Promise<Enemy[]>;
+  getEnemies(combatId?: string, userId?: string): Promise<Enemy[]>;
   getEnemy(id: string): Promise<Enemy | undefined>;
   createEnemy(enemy: InsertEnemy): Promise<Enemy>;
   updateEnemy(id: string, updates: Partial<Enemy>): Promise<Enemy | null>;
   deleteEnemy(id: string): Promise<boolean>;
   
   // Message history for AI conversations
-  getMessages(): Promise<Message[]>;
+  getMessages(userId?: string): Promise<Message[]>;
   getMessagesByCampaign(campaignId: string): Promise<Message[]>;
-  getRecentMessages(limit: number): Promise<Message[]>;
+  getRecentMessages(limit: number, userId?: string): Promise<Message[]>;
   getRecentMessagesByCampaign(campaignId: string, limit: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
-  clearMessages(): Promise<void>;
+  clearMessages(userId?: string): Promise<void>;
   
   // Campaign management
   getCampaigns(): Promise<Campaign[]>;
   getCampaignsByUser(userId: string): Promise<Campaign[]>;
   getCampaign(id: string): Promise<Campaign | undefined>;
-  getActiveCampaign(): Promise<Campaign | undefined>;
+  getActiveCampaign(userId?: string): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
   updateCampaign(id: string, updates: Partial<Campaign>): Promise<Campaign | null>;
   deleteCampaign(id: string): Promise<boolean>;
-  setActiveCampaign(id: string): Promise<Campaign | null>;
+  setActiveCampaign(id: string, userId?: string): Promise<Campaign | null>;
   
   // Game state management
-  getGameState(): Promise<GameState | undefined>;
+  getGameState(userId?: string): Promise<GameState | undefined>;
   createGameState(state: InsertGameState): Promise<GameState>;
-  updateGameState(updates: Partial<GameState>): Promise<GameState>;
+  updateGameState(updates: Partial<GameState>, userId?: string): Promise<GameState>;
+}
+
+// Database Storage Implementation
+export class DatabaseStorage implements IStorage {
+  private db: ReturnType<typeof drizzle>;
+  private activeCampaignId: string | null = null;
+
+  constructor() {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL environment variable is required");
+    }
+    
+    const sql = postgres(process.env.DATABASE_URL, { max: 1 });
+    this.db = drizzle(sql);
+  }
+
+  async init(): Promise<void> {
+    // Database is initialized through migrations
+    console.log("Database storage initialized");
+  }
+
+  // User management
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(user).returning();
+    return result[0];
+  }
+
+  async upsertUser(user: UpsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(user).onConflictDoUpdate({
+      target: users.email,
+      set: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        updatedAt: new Date().toISOString(),
+      },
+    }).returning();
+    return result[0];
+  }
+
+  // Character management
+  async getCharacter(userId?: string): Promise<Character | undefined> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (!activeCampaign) return undefined;
+
+    const result = await this.db.select().from(characters).where(eq(characters.campaignId, activeCampaign.id)).limit(1);
+    return result[0];
+  }
+
+  async createCharacter(character: InsertCharacter): Promise<Character> {
+    const result = await this.db.insert(characters).values(character).returning();
+    return result[0];
+  }
+
+  async updateCharacter(id: string, updates: Partial<Character>): Promise<Character | null> {
+    const result = await this.db.update(characters).set(updates).where(eq(characters.id, id)).returning();
+    return result[0] || null;
+  }
+
+  // Campaign management
+  async getCampaigns(): Promise<Campaign[]> {
+    return await this.db.select().from(campaigns).orderBy(desc(campaigns.lastPlayed));
+  }
+
+  async getCampaignsByUser(userId: string): Promise<Campaign[]> {
+    return await this.db.select().from(campaigns).where(eq(campaigns.userId, userId)).orderBy(desc(campaigns.lastPlayed));
+  }
+
+  async getCampaign(id: string): Promise<Campaign | undefined> {
+    const result = await this.db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getActiveCampaign(userId?: string): Promise<Campaign | undefined> {
+    if (userId) {
+      const result = await this.db.select().from(campaigns).where(
+        and(eq(campaigns.isActive, true), eq(campaigns.userId, userId))
+      ).limit(1);
+      return result[0];
+    } else {
+      const result = await this.db.select().from(campaigns).where(eq(campaigns.isActive, true)).limit(1);
+      return result[0];
+    }
+  }
+
+  async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
+    const result = await this.db.insert(campaigns).values(campaign).returning();
+    return result[0];
+  }
+
+  async updateCampaign(id: string, updates: Partial<Campaign>): Promise<Campaign | null> {
+    const result = await this.db.update(campaigns).set({
+      ...updates,
+      lastPlayed: new Date().toISOString(),
+    }).where(eq(campaigns.id, id)).returning();
+    return result[0] || null;
+  }
+
+  async deleteCampaign(id: string): Promise<boolean> {
+    // First delete all related data
+    await this.db.delete(characters).where(eq(characters.campaignId, id));
+    await this.db.delete(quests).where(eq(quests.campaignId, id));
+    await this.db.delete(items).where(eq(items.campaignId, id));
+    await this.db.delete(messages).where(eq(messages.campaignId, id));
+    await this.db.delete(enemies).where(eq(enemies.campaignId, id));
+    await this.db.delete(gameState).where(eq(gameState.campaignId, id));
+    
+    // Then delete the campaign
+    await this.db.delete(campaigns).where(eq(campaigns.id, id));
+    return true;
+  }
+
+  async setActiveCampaign(id: string, userId?: string): Promise<Campaign | null> {
+    // Get the campaign to check if it exists and get userId if not provided
+    const campaign = await this.getCampaign(id);
+    if (!campaign) return null;
+    
+    const targetUserId = userId || campaign.userId;
+    if (!targetUserId) return null;
+    
+    // Deactivate all campaigns for this user only
+    await this.db.update(campaigns).set({ isActive: false }).where(eq(campaigns.userId, targetUserId));
+    
+    // Activate the selected campaign
+    const result = await this.db.update(campaigns).set({
+      isActive: true,
+      lastPlayed: new Date().toISOString(),
+    }).where(eq(campaigns.id, id)).returning();
+    
+    this.activeCampaignId = id;
+    return result[0] || null;
+  }
+
+  // Quest management
+  async getQuests(userId?: string): Promise<Quest[]> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (!activeCampaign) return [];
+
+    return await this.db.select().from(quests).where(eq(quests.campaignId, activeCampaign.id));
+  }
+
+  async getQuest(id: string): Promise<Quest | undefined> {
+    const result = await this.db.select().from(quests).where(eq(quests.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createQuest(quest: InsertQuest): Promise<Quest> {
+    const result = await this.db.insert(quests).values(quest).returning();
+    return result[0];
+  }
+
+  async updateQuest(id: string, updates: Partial<Quest>): Promise<Quest | null> {
+    const result = await this.db.update(quests).set(updates).where(eq(quests.id, id)).returning();
+    return result[0] || null;
+  }
+
+  async deleteQuest(id: string): Promise<boolean> {
+    await this.db.delete(quests).where(eq(quests.id, id));
+    return true;
+  }
+
+  // Item management
+  async getItems(userId?: string): Promise<Item[]> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (!activeCampaign) return [];
+
+    return await this.db.select().from(items).where(eq(items.campaignId, activeCampaign.id));
+  }
+
+  async getItem(id: string): Promise<Item | undefined> {
+    const result = await this.db.select().from(items).where(eq(items.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createItem(item: InsertItem): Promise<Item> {
+    const result = await this.db.insert(items).values(item).returning();
+    return result[0];
+  }
+
+  async updateItem(id: string, updates: Partial<Item>): Promise<Item | null> {
+    const result = await this.db.update(items).set(updates).where(eq(items.id, id)).returning();
+    return result[0] || null;
+  }
+
+  async deleteItem(id: string): Promise<boolean> {
+    await this.db.delete(items).where(eq(items.id, id));
+    return true;
+  }
+
+  // Enemy management
+  async getEnemies(combatId?: string, userId?: string): Promise<Enemy[]> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (!activeCampaign) return [];
+
+    if (combatId) {
+      return await this.db.select().from(enemies).where(
+        and(eq(enemies.campaignId, activeCampaign.id), eq(enemies.combatId, combatId))
+      );
+    } else {
+      return await this.db.select().from(enemies).where(eq(enemies.campaignId, activeCampaign.id));
+    }
+  }
+
+  async getEnemy(id: string): Promise<Enemy | undefined> {
+    const result = await this.db.select().from(enemies).where(eq(enemies.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createEnemy(enemy: InsertEnemy): Promise<Enemy> {
+    const result = await this.db.insert(enemies).values(enemy).returning();
+    return result[0];
+  }
+
+  async updateEnemy(id: string, updates: Partial<Enemy>): Promise<Enemy | null> {
+    const result = await this.db.update(enemies).set(updates).where(eq(enemies.id, id)).returning();
+    return result[0] || null;
+  }
+
+  async deleteEnemy(id: string): Promise<boolean> {
+    await this.db.delete(enemies).where(eq(enemies.id, id));
+    return true;
+  }
+
+  // Message management
+  async getMessages(userId?: string): Promise<Message[]> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (!activeCampaign) return [];
+
+    return await this.db.select().from(messages).where(eq(messages.campaignId, activeCampaign.id)).orderBy(messages.timestamp);
+  }
+
+  async getMessagesByCampaign(campaignId: string): Promise<Message[]> {
+    return await this.db.select().from(messages).where(eq(messages.campaignId, campaignId)).orderBy(messages.timestamp);
+  }
+
+  async getRecentMessages(limit: number, userId?: string): Promise<Message[]> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (!activeCampaign) return [];
+
+    return await this.db.select().from(messages)
+      .where(eq(messages.campaignId, activeCampaign.id))
+      .orderBy(desc(messages.timestamp))
+      .limit(limit);
+  }
+
+  async getRecentMessagesByCampaign(campaignId: string, limit: number): Promise<Message[]> {
+    return await this.db.select().from(messages)
+      .where(eq(messages.campaignId, campaignId))
+      .orderBy(desc(messages.timestamp))
+      .limit(limit);
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const result = await this.db.insert(messages).values(message).returning();
+    return result[0];
+  }
+
+  async clearMessages(userId?: string): Promise<void> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (activeCampaign) {
+      await this.db.delete(messages).where(eq(messages.campaignId, activeCampaign.id));
+    }
+  }
+
+  // Game state management
+  async getGameState(userId?: string): Promise<GameState | undefined> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (!activeCampaign) return undefined;
+
+    const result = await this.db.select().from(gameState).where(eq(gameState.campaignId, activeCampaign.id)).limit(1);
+    return result[0];
+  }
+
+  async createGameState(state: InsertGameState): Promise<GameState> {
+    const result = await this.db.insert(gameState).values(state).returning();
+    return result[0];
+  }
+
+  async updateGameState(updates: Partial<GameState>, userId?: string): Promise<GameState> {
+    const activeCampaign = await this.getActiveCampaign(userId);
+    if (!activeCampaign) {
+      throw new Error("No active campaign found");
+    }
+
+    // Check if game state exists for this campaign
+    const existing = await this.getGameState(userId);
+    if (existing) {
+      const result = await this.db.update(gameState)
+        .set(updates)
+        .where(eq(gameState.campaignId, activeCampaign.id))
+        .returning();
+      return result[0];
+    } else {
+      // Create new game state
+      const newState = {
+        campaignId: activeCampaign.id,
+        currentScene: "",
+        inCombat: false,
+        currentTurn: null,
+        combatId: null,
+        turnCount: 0,
+        ...updates
+      };
+      return await this.createGameState(newState);
+    }
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -274,7 +601,7 @@ export class MemStorage implements IStorage {
   }
 
   // Character management
-  async getCharacter(): Promise<Character | undefined> {
+  async getCharacter(userId?: string): Promise<Character | undefined> {
     return this.character;
   }
 
@@ -722,4 +1049,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
+
+// Initialize storage
+storage.init();
