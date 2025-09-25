@@ -62,6 +62,7 @@ export interface IStorage {
   
   // Campaign management
   getCampaigns(): Promise<Campaign[]>;
+  getCampaignsByUser(userId: string): Promise<Campaign[]>;
   getCampaign(id: string): Promise<Campaign | undefined>;
   getActiveCampaign(): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
@@ -641,6 +642,10 @@ export class MemStorage implements IStorage {
   // Campaign management
   async getCampaigns(): Promise<Campaign[]> {
     return Array.from(this.campaigns.values());
+  }
+
+  async getCampaignsByUser(userId: string): Promise<Campaign[]> {
+    return Array.from(this.campaigns.values()).filter(campaign => campaign.userId === userId);
   }
 
   async getCampaign(id: string): Promise<Campaign | undefined> {

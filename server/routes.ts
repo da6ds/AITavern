@@ -160,8 +160,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           turnCount: 0,
         });
 
+        // Get or ensure active campaign for existing character
+        let activeCampaign = await storage.getActiveCampaign();
+        if (!activeCampaign) {
+          activeCampaign = await storage.createCampaign({
+            name: "Your Adventure",
+            description: "An epic journey through mystical lands",
+            userId: req.user.claims.sub
+          });
+          await storage.setActiveCampaign(activeCampaign.id);
+        }
+
         // Create the initial quest
         await storage.createQuest({
+          campaignId: activeCampaign.id,
           title: defaultTemplate.initialQuest.title,
           description: defaultTemplate.initialQuest.description,
           status: "active",
@@ -177,6 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Clear existing messages and create welcome message
         await storage.clearMessages();
         const welcomeMessage = await storage.createMessage({
+          campaignId: activeCampaign.id,
           content: "Welcome to your adventure! " + defaultTemplate.initialScene,
           sender: "dm",
           senderName: "Adventure Guide",
@@ -214,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeCampaign = await storage.createCampaign({
           name: "Your Adventure",
           description: "An epic journey through mystical lands",
-          setting: "Fantasy"
+          userId: req.user.claims.sub
         });
         await storage.setActiveCampaign(activeCampaign.id);
       }
@@ -249,6 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create the initial quest
       const quest = await storage.createQuest({
+        campaignId: activeCampaign.id,
         title: defaultTemplate.initialQuest.title,
         description: defaultTemplate.initialQuest.description,
         status: "active",
@@ -264,6 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clear existing messages and create welcome message
       await storage.clearMessages();
       const welcomeMessage = await storage.createMessage({
+        campaignId: activeCampaign.id,
         content: "Welcome to your adventure, " + character.name + "! " + defaultTemplate.initialScene,
         sender: "dm",
         senderName: "Adventure Guide", 
@@ -419,8 +434,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         turnCount: 0,
       });
 
+      // Get or ensure active campaign
+      let activeCampaign = await storage.getActiveCampaign();
+      if (!activeCampaign) {
+        activeCampaign = await storage.createCampaign({
+          name: template.name,
+          description: `Adventure in ${template.setting}`,
+          userId: (req as any).user.claims.sub
+        });
+        await storage.setActiveCampaign(activeCampaign.id);
+      }
+
       // Create the initial quest
       const quest = await storage.createQuest({
+        campaignId: activeCampaign.id,
         title: template.initialQuest.title,
         description: template.initialQuest.description,
         status: "active",
@@ -443,6 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enhancedWelcomeResponse = await aiService.generateEnhancedWelcomeMessage(template, character);
       
       const welcomeMessage = await storage.createMessage({
+        campaignId: activeCampaign.id,
         content: enhancedWelcomeResponse.content,
         sender: enhancedWelcomeResponse.sender,
         senderName: enhancedWelcomeResponse.senderName,
@@ -1443,9 +1471,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Campaign routes
-  app.get("/api/campaigns", isAuthenticated, async (_req, res) => {
+  app.get("/api/campaigns", isAuthenticated, async (req: any, res) => {
     try {
-      const campaigns = await storage.getCampaigns();
+      const userId = req.user?.claims?.sub;
+      const campaigns = await storage.getCampaignsByUser(userId);
       res.json(campaigns);
     } catch (error) {
       console.error("Error fetching campaigns:", error);

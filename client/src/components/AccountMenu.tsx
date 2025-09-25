@@ -29,8 +29,8 @@ export default function AccountMenu() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await apiRequest('POST', '/api/logout');
-      window.location.href = '/';
+      // Use window.location.href to navigate to logout endpoint
+      window.location.href = '/api/logout';
     } catch (error) {
       console.error('Logout failed:', error);
       setIsLoggingOut(false);

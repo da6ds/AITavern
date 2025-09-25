@@ -152,7 +152,9 @@ export default function MultipleAdventures({
         <p className="text-muted-foreground text-sm">
           {campaigns.length === 0 
             ? "No adventures yet. Create your first character to begin!"
-            : `Continue one of your ${campaigns.length} adventure${campaigns.length === 1 ? '' : 's'}`
+            : campaigns.length === 1
+              ? "Continue your adventure"
+              : `Choose from your ${campaigns.length} adventures`
           }
         </p>
       </div>
