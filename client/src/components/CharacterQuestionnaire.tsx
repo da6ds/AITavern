@@ -368,10 +368,11 @@ export default function CharacterQuestionnaire({
       <StickyBottomActions
         onBack={goBack}
         onSkip={handleSkipWithDefaults}
-        onContinue={currentStep === "summary" ? () => onComplete(generateResults()) : undefined}
+        onContinue={currentStep === "summary" ? () => onComplete(generateResults()) : goToNext}
         backLabel={currentStep === "size" ? "Back to Character" : "Back"}
         skipLabel="Use Defaults"
-        continueLabel={currentStep === "summary" ? "Continue with These" : undefined}
+        continueLabel={currentStep === "summary" ? "Continue with These" : "Next"}
+        continueDisabled={false}
         data-testid="character-questionnaire-actions"
       />
     </>
