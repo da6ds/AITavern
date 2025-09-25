@@ -27,6 +27,7 @@ import DemoTooltip from "./components/DemoTooltip";
 import ThemeToggle from "./components/ThemeToggle";
 import CharacterCreation from "./components/CharacterCreation";
 import AdventureTemplates from "./components/AdventureTemplates";
+import { AccountManagement } from "./components/AccountManagement";
 import { useTooltips } from "./hooks/useTooltips";
 import { useNotifications } from "./hooks/useNotifications";
 
@@ -34,7 +35,7 @@ import { useNotifications } from "./hooks/useNotifications";
 import type { Character, Quest, Item, Message, Enemy, GameState, Campaign } from "@shared/schema";
 
 type TabType = "character" | "quests" | "inventory" | "chat";
-type ViewType = "welcome" | "startMenu" | "userGuide" | "characterCreation" | "adventureTemplates" | "game";
+type ViewType = "welcome" | "startMenu" | "userGuide" | "characterCreation" | "adventureTemplates" | "account" | "game";
 
 function GameApp() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -427,6 +428,35 @@ function GameApp() {
     );
   }
 
+  if (currentView === "account") {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Page Header */}
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
+          <div className="flex items-center justify-between h-16 px-3 sm:px-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentView("startMenu")}
+              className="text-muted-foreground"
+              data-testid="button-return-menu-account"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back to Menu
+            </Button>
+            <h1 className="text-xl font-bold text-center">Account Management</h1>
+            <SettingsDropdown />
+          </div>
+        </div>
+        
+        {/* Account Content */}
+        <main className="px-3 sm:px-4 py-4 sm:py-6">
+          <AccountManagement />
+        </main>
+      </div>
+    );
+  }
+
   // Main game view
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -455,26 +485,25 @@ function GameApp() {
           <div className="flex items-center space-x-2">
             {isAuthenticated && user && (
               <div className="flex items-center space-x-2">
-                <div className="hidden sm:flex items-center space-x-2">
-                  {user.profileImageUrl && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentView("account")}
+                  className="flex items-center space-x-2"
+                  data-testid="button-account"
+                >
+                  {user.profileImageUrl ? (
                     <img 
                       src={user.profileImageUrl} 
                       alt="Profile" 
                       className="w-6 h-6 rounded-full object-cover"
                     />
+                  ) : (
+                    <User className="w-4 h-4" />
                   )}
-                  <span className="text-sm text-muted-foreground">
-                    {user.firstName || user.email?.split('@')[0] || 'Player'}
+                  <span className="hidden sm:inline">
+                    {user.firstName || user.email?.split('@')[0] || 'Account'}
                   </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => window.location.href = '/api/logout'}
-                  data-testid="button-logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-1">Logout</span>
                 </Button>
               </div>
             )}
