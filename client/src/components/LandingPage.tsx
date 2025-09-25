@@ -52,12 +52,27 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
           window.location.reload();
         }
       } else {
-        // Direct quick start for logged-in users
-        await apiRequest('POST', '/api/quick-start');
-        window.location.reload();
+        // Check if user is authenticated first
+        try {
+          await apiRequest('GET', '/api/auth/user');
+          // User is authenticated, proceed with quick start
+          await apiRequest('POST', '/api/quick-start');
+          window.location.reload();
+        } catch (authError) {
+          // User is not authenticated, redirect to login or show error
+          console.warn('User not authenticated for quick start');
+          // For now, switch to demo mode as fallback
+          setDemoMode(true);
+          const demoResponse = await apiRequest('POST', '/api/demo/start');
+          if (demoResponse.ok) {
+            await apiRequest('POST', '/api/quick-start');
+            window.location.reload();
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to quick start:', error);
+      // TODO: Show user-friendly error message
     } finally {
       setIsQuickStarting(false);
     }

@@ -106,8 +106,9 @@ export default function ChatInterface({
               {messages.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>No messages yet</p>
-                  <p className="text-sm">Start your adventure by speaking or using quick actions!</p>
+                  <p>Welcome to your adventure!</p>
+                  <p className="text-sm">Your character and world are ready. Start by speaking to your AI companion or using quick actions below!</p>
+                  <p className="text-xs mt-2 opacity-75">Tip: Visit other tabs to customize your character, check quests, and manage inventory anytime.</p>
                 </div>
               ) : (
                 messages.map((message) => (
@@ -154,7 +155,7 @@ export default function ChatInterface({
                   onClick={() => handleQuickAction(action.action)}
                   disabled={isLoading}
                   className="flex-1"
-                  data-testid={`quick-action-${action.action}`}
+                  data-testid={`button-quick-action-${action.action}`}
                 >
                   {action.icon}
                   {action.label}

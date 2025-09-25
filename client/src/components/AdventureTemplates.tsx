@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import StickyBottomActions from "./StickyBottomActions";
 import { 
   Scroll,
   Mountain,
@@ -20,6 +21,7 @@ import {
 interface AdventureTemplatesProps {
   onSelectTemplate: (template: AdventureTemplate) => void;
   onBack: () => void;
+  onSkip?: () => void;
   className?: string;
 }
 
@@ -199,6 +201,7 @@ const difficultyColors = {
 export default function AdventureTemplates({
   onSelectTemplate,
   onBack,
+  onSkip,
   className = ""
 }: AdventureTemplatesProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<AdventureTemplate | null>(null);
@@ -213,9 +216,20 @@ export default function AdventureTemplates({
     }
   };
 
+  const handleSkipWithDefault = () => {
+    if (onSkip) {
+      onSkip();
+    } else {
+      // Use the first template as default (Fellowship Quest)
+      const defaultTemplate = adventureTemplates[0];
+      onSelectTemplate(defaultTemplate);
+    }
+  };
+
   return (
-    <div className={`min-h-screen bg-background text-foreground p-4 ${className}`}>
-      <div className="max-w-6xl mx-auto">
+    <>
+      <div className={`min-h-screen bg-background text-foreground p-4 pb-32 ${className}`}>
+        <div className="max-w-6xl mx-auto">
         {/* Header */}
         <Card className="mb-6">
           <CardHeader className="text-center">
@@ -230,7 +244,7 @@ export default function AdventureTemplates({
         </Card>
 
         {/* Template Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
           {adventureTemplates.map((template) => (
             <Card 
               key={template.id}
@@ -284,15 +298,15 @@ export default function AdventureTemplates({
 
                 <div>
                   <h4 className="text-sm font-medium mb-2">World Features:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {template.worldFeatures.slice(0, 3).map((feature, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
+                  <div className="flex flex-wrap gap-1 sm:gap-2">
+                    {template.worldFeatures.slice(0, 2).map((feature, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs break-words">
                         {feature}
                       </Badge>
                     ))}
-                    {template.worldFeatures.length > 3 && (
+                    {template.worldFeatures.length > 2 && (
                       <Badge variant="secondary" className="text-xs">
-                        +{template.worldFeatures.length - 3} more
+                        +{template.worldFeatures.length - 2} more
                       </Badge>
                     )}
                   </div>
@@ -346,27 +360,19 @@ export default function AdventureTemplates({
           </Card>
         )}
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            data-testid="button-templates-back"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Menu
-          </Button>
-          
-          <Button
-            onClick={handleConfirmSelection}
-            disabled={!selectedTemplate}
-            data-testid="button-start-adventure"
-          >
-            Start Adventure
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
         </div>
       </div>
-    </div>
+      
+      <StickyBottomActions
+        onBack={onBack}
+        onSkip={handleSkipWithDefault}
+        onContinue={handleConfirmSelection}
+        continueDisabled={!selectedTemplate}
+        backLabel="Back to Menu"
+        skipLabel="Use Default Adventure"
+        continueLabel="Start Adventure"
+        data-testid="adventure-templates-actions"
+      />
+    </>
   );
 }

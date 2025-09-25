@@ -273,13 +273,13 @@ export default function CharacterQuestionnaire({
             <Card>
               <CardContent className="pt-6">
                 <h3 className="font-semibold text-lg mb-4 text-center">Ability Scores</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 sm:gap-4">
                   {Object.entries(results.suggestedAbilities).map(([ability, score]) => (
                     <div key={ability} className="text-center">
-                      <div className="font-medium text-sm uppercase tracking-wide text-muted-foreground">
+                      <div className="font-medium text-xs sm:text-sm uppercase tracking-wide text-muted-foreground">
                         {ability.slice(0, 3)}
                       </div>
-                      <div className="text-2xl font-bold text-primary">{score}</div>
+                      <div className="text-xl sm:text-2xl font-bold text-primary">{score}</div>
                     </div>
                   ))}
                 </div>

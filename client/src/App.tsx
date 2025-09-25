@@ -417,6 +417,43 @@ function GameApp() {
             setCurrentView("game");
           }
         }}
+        onSkip={async () => {
+          // Skip with default adventure (first template)
+          const defaultTemplate = {
+            id: "fellowship-quest",
+            name: "The Fellowship's Journey",
+            setting: "Middle-earth Inspired",
+            initialScene: "The Prancing Pony Inn",
+            initialQuest: {
+              title: "The Ring Bearer's Task",
+              description: "You've been entrusted with a mysterious ring that must be taken to the Elven council. Strange dark riders have been seen in the area, seeking something...",
+              priority: "high" as const,
+              maxProgress: 5
+            }
+          };
+
+          try {
+            // Initialize default adventure
+            await apiRequest('POST', '/api/adventure/initialize', {
+              id: defaultTemplate.id,
+              name: defaultTemplate.name,
+              setting: defaultTemplate.setting,
+              initialScene: defaultTemplate.initialScene,
+              initialQuest: defaultTemplate.initialQuest
+            });
+            
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({ queryKey: ['/api/game-state'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
+            
+            setCurrentView("game");
+          } catch (error) {
+            console.error('Failed to initialize default adventure:', error);
+            // Still proceed to game view
+            setCurrentView("game");
+          }
+        }}
         onBack={() => setCurrentView("startMenu")}
       />
     );
@@ -458,8 +495,10 @@ function GameApp() {
       </div>
       
       {/* Main Content */}
-      <main className="px-3 sm:px-4 py-4 sm:py-6">
-        {getPageContent()}
+      <main className="px-3 sm:px-4 py-4 sm:py-6 pb-20 sm:pb-24 min-h-0">
+        <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
+          {getPageContent()}
+        </div>
       </main>
       
       {/* Bottom Navigation */}
