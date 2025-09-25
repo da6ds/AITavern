@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import StickyBottomActions from "./StickyBottomActions";
 import { 
   HelpCircle, 
   ArrowRight,
@@ -25,6 +26,7 @@ interface CharacterQuestionnaireProps {
   };
   onComplete: (results: CharacterQuestionnaireResults) => void;
   onBack: () => void;
+  onSkip?: () => void;
   className?: string;
 }
 
@@ -102,6 +104,7 @@ export default function CharacterQuestionnaire({
   character,
   onComplete,
   onBack,
+  onSkip,
   className = ""
 }: CharacterQuestionnaireProps) {
   const [currentStep, setCurrentStep] = useState<QuestionnaireStep>("size");
@@ -113,6 +116,27 @@ export default function CharacterQuestionnaire({
     const currentIndex = stepOrder.indexOf(currentStep);
     if (currentIndex < stepOrder.length - 1) {
       setCurrentStep(stepOrder[currentIndex + 1]);
+    }
+  };
+
+  const handleSkipWithDefaults = () => {
+    if (onSkip) {
+      onSkip();
+    } else {
+      // Provide default results
+      const defaultResults: CharacterQuestionnaireResults = {
+        suggestedRace: "Human",
+        suggestedClass: "Fighter", 
+        suggestedAbilities: {
+          strength: 14,
+          dexterity: 13,
+          constitution: 15,
+          intelligence: 12,
+          wisdom: 13,
+          charisma: 11
+        }
+      };
+      onComplete(defaultResults);
     }
   };
 
@@ -262,23 +286,7 @@ export default function CharacterQuestionnaire({
               </CardContent>
             </Card>
 
-            <div className="flex justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={goBack}
-                data-testid="button-questionnaire-back"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <Button
-                onClick={() => onComplete(results)}
-                data-testid="button-questionnaire-complete"
-              >
-                Continue with These Suggestions
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
+            {/* Replace with StickyBottomActions for summary step */}
           </CardContent>
         </Card>
       );
@@ -314,58 +322,58 @@ export default function CharacterQuestionnaire({
             ))}
           </div>
 
-          <div className="flex justify-between pt-4">
-            <Button
-              variant="ghost"
-              onClick={goBack}
-              data-testid="button-questionnaire-step-back"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div className="text-sm text-muted-foreground">
-              Question {stepOrder.indexOf(currentStep) + 1} of {stepOrder.length}
-            </div>
-          </div>
+          {/* Replace with StickyBottomActions for question steps */}
         </CardContent>
       </Card>
     );
   };
 
   return (
-    <div className={`min-h-screen bg-background text-foreground p-4 ${className}`}>
-      {/* Progress indicator */}
-      <div className="max-w-2xl mx-auto mb-8">
-        <div className="flex items-center justify-center space-x-2 mb-4">
-          {stepOrder.map((step, index) => (
-            <div key={step} className="flex items-center">
-              <div className={`
-                w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                ${currentStep === step ? 'bg-primary text-primary-foreground' : 
-                  stepOrder.indexOf(currentStep) > index 
-                    ? 'bg-primary/20 text-primary' 
-                    : 'bg-muted text-muted-foreground'}
-              `}>
-                {index + 1}
+    <>
+      <div className={`min-h-screen bg-background text-foreground p-4 pb-32 ${className}`}>
+        {/* Progress indicator */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            {stepOrder.map((step, index) => (
+              <div key={step} className="flex items-center">
+                <div className={`
+                  w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                  ${currentStep === step ? 'bg-primary text-primary-foreground' : 
+                    stepOrder.indexOf(currentStep) > index 
+                      ? 'bg-primary/20 text-primary' 
+                      : 'bg-muted text-muted-foreground'}
+                `}>
+                  {index + 1}
+                </div>
+                {index < stepOrder.length - 1 && (
+                  <div className={`w-8 h-0.5 mx-2 ${
+                    stepOrder.indexOf(currentStep) > index 
+                      ? 'bg-primary' 
+                      : 'bg-muted'
+                  }`} />
+                )}
               </div>
-              {index < stepOrder.length - 1 && (
-                <div className={`w-8 h-0.5 mx-2 ${
-                  stepOrder.indexOf(currentStep) > index 
-                    ? 'bg-primary' 
-                    : 'bg-muted'
-                }`} />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+          <div className="text-center">
+            <Badge variant="secondary" className="text-xs">
+              {currentStep === "summary" ? "Review" : `Question ${stepOrder.indexOf(currentStep) + 1} of ${stepOrder.length}`}
+            </Badge>
+          </div>
         </div>
-        <div className="text-center">
-          <Badge variant="secondary" className="text-xs">
-            {currentStep === "summary" ? "Review" : `Question ${stepOrder.indexOf(currentStep) + 1} of ${stepOrder.length}`}
-          </Badge>
-        </div>
-      </div>
 
-      {renderQuestion()}
-    </div>
+        {renderQuestion()}
+      </div>
+      
+      <StickyBottomActions
+        onBack={goBack}
+        onSkip={handleSkipWithDefaults}
+        onContinue={currentStep === "summary" ? () => onComplete(generateResults()) : undefined}
+        backLabel={currentStep === "size" ? "Back to Character" : "Back"}
+        skipLabel="Use Defaults"
+        continueLabel={currentStep === "summary" ? "Continue with These" : undefined}
+        data-testid="character-questionnaire-actions"
+      />
+    </>
   );
 }

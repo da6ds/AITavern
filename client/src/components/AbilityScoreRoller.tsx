@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import StickyBottomActions from "./StickyBottomActions";
 import { 
   Dice6, 
   ArrowRight,
@@ -31,6 +32,7 @@ interface AbilityScoreRollerProps {
   };
   onComplete: (abilities: AbilityScores) => void;
   onBack: () => void;
+  onSkip?: () => void;
   className?: string;
 }
 
@@ -71,10 +73,20 @@ export default function AbilityScoreRoller({
   suggestedAbilities,
   onComplete,
   onBack,
+  onSkip,
   className = ""
 }: AbilityScoreRollerProps) {
   const [abilities, setAbilities] = useState<AbilityScores>(suggestedAbilities);
   const [method, setMethod] = useState<"suggested" | "manual" | "random">("suggested");
+
+  const handleSkipWithSuggested = () => {
+    if (onSkip) {
+      onSkip();
+    } else {
+      // Use the suggested abilities as defaults
+      onComplete(suggestedAbilities);
+    }
+  };
 
   const getCurrentTotal = () => {
     return Object.values(abilities).reduce((sum, score) => sum + score, 0);
@@ -140,8 +152,9 @@ export default function AbilityScoreRoller({
   };
 
   return (
-    <div className={`min-h-screen bg-background text-foreground p-4 ${className}`}>
-      <div className="max-w-2xl mx-auto">
+    <>
+      <div className={`min-h-screen bg-background text-foreground p-4 pb-32 ${className}`}>
+        <div className="max-w-2xl mx-auto">
         {/* Header */}
         <Card className="mb-6">
           <CardHeader className="text-center">
@@ -269,27 +282,21 @@ export default function AbilityScoreRoller({
               </div>
             )}
 
-            <div className="flex justify-between pt-6 mt-6 border-t">
-              <Button
-                variant="outline"
-                onClick={onBack}
-                data-testid="button-abilities-back"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <Button
-                onClick={() => onComplete(abilities)}
-                disabled={method === "manual" && getPointsRemaining() !== 0}
-                data-testid="button-abilities-complete"
-              >
-                Create Character
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>
     </div>
+      
+    <StickyBottomActions
+      onBack={onBack}
+      onSkip={handleSkipWithSuggested}
+      onContinue={() => onComplete(abilities)}
+      continueDisabled={method === "manual" && getPointsRemaining() !== 0}
+      backLabel="Back to Questionnaire"
+      skipLabel="Use Suggested"
+      continueLabel="Create Character"
+      data-testid="character-abilities-actions"
+    />
+  </>
   );
 }

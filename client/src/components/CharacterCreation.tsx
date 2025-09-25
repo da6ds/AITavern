@@ -18,6 +18,7 @@ import {
 import CharacterQuestionnaire, { type CharacterQuestionnaireResults } from "./CharacterQuestionnaire";
 import AbilityScoreRoller, { type AbilityScores } from "./AbilityScoreRoller";
 import CharacterTemplates from "./CharacterTemplates";
+import StickyBottomActions from "./StickyBottomActions";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface CharacterCreationProps {
@@ -146,18 +147,28 @@ export default function CharacterCreation({
     fileInputRef.current?.click();
   };
 
+  const handleSkipBasics = () => {
+    // Fill with default values and continue
+    if (!character.name || !character.appearance || !character.backstory) {
+      generateRandomCharacter();
+    }
+    setCurrentStep("portrait");
+  };
+
   const renderBasicsStep = () => (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader className="text-center">
-        <CardTitle className="font-serif text-2xl flex items-center justify-center gap-2">
-          <User className="w-6 h-6 text-primary" />
-          Create Your Character
-        </CardTitle>
-        <p className="text-muted-foreground">
-          Tell us about your adventurer's identity and background
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <>
+      <div className="pb-32"> {/* Add padding for sticky bottom nav */}
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader className="text-center">
+            <CardTitle className="font-serif text-2xl flex items-center justify-center gap-2">
+              <User className="w-6 h-6 text-primary" />
+              Create Your Character
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Tell us about your adventurer's identity and background
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="character-name">Character Name</Label>
           <Input
@@ -196,44 +207,49 @@ export default function CharacterCreation({
           />
         </div>
 
-        <div className="pt-4 space-y-4">
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              onClick={generateRandomCharacter}
-              className="w-full"
-              data-testid="button-random-character"
-            >
-              <Dice6 className="w-4 h-4 mr-2" />
-              Quick Start - Generate Random Character
-            </Button>
-          </div>
-          
-          <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={onBack}
-              data-testid="button-character-back"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Menu
-            </Button>
-            <Button
-              onClick={handleBasicsSubmit}
-              disabled={!character.name.trim() || !character.appearance.trim() || !character.backstory.trim()}
-              data-testid="button-character-continue"
-            >
-              Continue
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+            <div className="pt-4 space-y-4">
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={generateRandomCharacter}
+                  className="w-full"
+                  data-testid="button-random-character"
+                >
+                  <Dice6 className="w-4 h-4 mr-2" />
+                  Quick Start - Generate Random Character
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <StickyBottomActions
+        onBack={onBack}
+        onSkip={handleSkipBasics}
+        onContinue={handleBasicsSubmit}
+        continueDisabled={!character.name.trim() || !character.appearance.trim() || !character.backstory.trim()}
+        backLabel="Back to Menu"
+        skipLabel="Use Defaults"
+        continueLabel="Continue"
+        data-testid="character-basics-actions"
+      />
+    </>
   );
 
+  const handleSkipPortrait = () => {
+    // Set a placeholder portrait URL or leave empty for AvatarFallback
+    setCharacter(prev => ({ 
+      ...prev, 
+      portraitUrl: '' 
+    }));
+    setCurrentStep("questionnaire");
+  };
+
   const renderPortraitStep = () => (
-    <Card className="max-w-2xl mx-auto">
+    <>
+      <div className="pb-32"> {/* Add padding for sticky bottom nav */}
+        <Card className="max-w-2xl mx-auto">
       <CardHeader className="text-center">
         <CardTitle className="font-serif text-2xl flex items-center justify-center gap-2">
           <Wand2 className="w-6 h-6 text-primary" />
@@ -327,26 +343,21 @@ export default function CharacterCreation({
           data-testid="file-input-portrait"
         />
 
-        <div className="flex justify-between pt-4">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentStep(character.race ? "templates" : "basics")}
-            data-testid="button-portrait-back"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          <Button
-            onClick={() => setCurrentStep("questionnaire")}
-            data-testid="button-portrait-continue"
-          >
-            Continue
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
       </CardContent>
     </Card>
-  );
+  </div>
+      
+  <StickyBottomActions
+    onBack={() => setCurrentStep(character.race ? "templates" : "basics")}
+    onSkip={handleSkipPortrait}
+    onContinue={() => setCurrentStep("questionnaire")}
+    backLabel="Back"
+    skipLabel="Use Default"
+    continueLabel="Continue"
+    data-testid="character-portrait-actions"
+  />
+</>
+);
 
   const handleTemplateSelect = (template: any) => {
     // Convert template to character data format and skip to portrait step
@@ -389,6 +400,27 @@ export default function CharacterCreation({
               setCurrentStep("abilities");
             }}
             onBack={() => setCurrentStep("portrait")}
+            onSkip={() => {
+              // Skip with default results
+              setCharacter(prev => ({ 
+                ...prev, 
+                race: "Human",
+                class: "Fighter",
+                questionnaireResults: {
+                  suggestedRace: "Human",
+                  suggestedClass: "Fighter",
+                  suggestedAbilities: {
+                    strength: 14,
+                    dexterity: 13,
+                    constitution: 15,
+                    intelligence: 12,
+                    wisdom: 13,
+                    charisma: 11
+                  }
+                }
+              }));
+              setCurrentStep("abilities");
+            }}
           />
         );
       case "abilities":
@@ -435,6 +467,51 @@ export default function CharacterCreation({
               }
             }}
             onBack={() => setCurrentStep("questionnaire")}
+            onSkip={async () => {
+              // Skip with suggested abilities and save character
+              const suggestedAbilities = character.questionnaireResults?.suggestedAbilities || {
+                strength: 14,
+                dexterity: 13,
+                constitution: 15,
+                intelligence: 12,
+                wisdom: 13,
+                charisma: 11
+              };
+              
+              const finalCharacter = {
+                ...character,
+                abilities: suggestedAbilities
+              };
+              
+              // Save character to backend
+              try {
+                await apiRequest('POST', '/api/character', {
+                  name: finalCharacter.name,
+                  class: finalCharacter.class || 'Fighter',
+                  level: 1,
+                  experience: 0,
+                  strength: suggestedAbilities.strength,
+                  dexterity: suggestedAbilities.dexterity,
+                  constitution: suggestedAbilities.constitution,
+                  intelligence: suggestedAbilities.intelligence,
+                  wisdom: suggestedAbilities.wisdom,
+                  charisma: suggestedAbilities.charisma,
+                  maxHealth: 10 + Math.floor((suggestedAbilities.constitution - 10) / 2),
+                  currentHealth: 10 + Math.floor((suggestedAbilities.constitution - 10) / 2),
+                  maxMana: suggestedAbilities.intelligence > 12 ? 5 + Math.floor((suggestedAbilities.intelligence - 10) / 2) : 0,
+                  currentMana: suggestedAbilities.intelligence > 12 ? 5 + Math.floor((suggestedAbilities.intelligence - 10) / 2) : 0
+                });
+                
+                // Invalidate character query to refresh data
+                queryClient.invalidateQueries({ queryKey: ['/api/character'] });
+                
+                onComplete(finalCharacter);
+              } catch (error) {
+                console.error('Failed to save character:', error);
+                // Still call onComplete to proceed, character data is in memory
+                onComplete(finalCharacter);
+              }
+            }}
           />
         );
       default:

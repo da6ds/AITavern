@@ -17,6 +17,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
   const [, setLocation] = useLocation();
   const [demoMode, setDemoMode] = useState(false);
   const [isStartingDemo, setIsStartingDemo] = useState(false);
+  const [isQuickStarting, setIsQuickStarting] = useState(false);
 
   // Check if demo mode is enabled
   const { data: demoStatus, isLoading: isDemoStatusLoading } = useQuery<{enabled: boolean}>({
@@ -36,6 +37,29 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       console.error('Failed to start demo mode:', error);
     } finally {
       setIsStartingDemo(false);
+    }
+  };
+
+  const handleQuickStart = async () => {
+    try {
+      setIsQuickStarting(true);
+      if (demoMode) {
+        // Start demo first, then quick start
+        const demoResponse = await apiRequest('POST', '/api/demo/start');
+        if (demoResponse.ok) {
+          // Quick start with default character
+          await apiRequest('POST', '/api/quick-start');
+          window.location.reload();
+        }
+      } else {
+        // Direct quick start for logged-in users
+        await apiRequest('POST', '/api/quick-start');
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to quick start:', error);
+    } finally {
+      setIsQuickStarting(false);
     }
   };
 
@@ -108,7 +132,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
             <CardHeader>
               <CardTitle className="text-2xl">Start an Adventure</CardTitle>
               <CardDescription className="text-base">
-                Join thousands of adventurers in magical worlds powered by AI
+                Jump into your first adventure or customize your experience
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -125,23 +149,34 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 </div>
               )}
               
-              <Button 
-                onClick={handleMainCTA}
-                size="lg"
-                className="w-full bg-gradient-to-r from-amber-600 to-green-600 hover:from-amber-700 hover:to-green-700"
-                data-testid="button-start-adventure"
-                disabled={isStartingDemo}
-              >
-                {isStartingDemo ? "Starting Demo..." : "Start an Adventure"}
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleQuickStart}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-amber-600 to-green-600 hover:from-amber-700 hover:to-green-700"
+                  data-testid="button-quick-start"
+                  disabled={isQuickStarting || isStartingDemo}
+                >
+                  {isQuickStarting ? "Starting Adventure..." : "Start Playing Now"}
+                </Button>
+                
+                <Button 
+                  onClick={handleMainCTA}
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  data-testid="button-customize"
+                  disabled={isStartingDemo || isQuickStarting}
+                >
+                  {isStartingDemo ? "Starting Demo..." : "Customize Character"}
+                </Button>
+              </div>
               <div className="text-sm text-muted-foreground">
                 {demoMode ? (
                   <p>Try the adventure demo without creating an account. Your progress won't be saved.</p>
                 ) : (
-                  <>
-                    <p>New to Skunk Tales? Create your account and first character.</p>
-                    <p>Returning adventurer? Sign in to continue your journey.</p>
-                  </>
+                  <p><strong>Start Playing Now</strong>: Jump in with a default character. <br />
+                     <strong>Customize</strong>: Create your own character and choose your adventure.</p>
                 )}
               </div>
             </CardContent>

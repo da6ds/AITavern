@@ -132,6 +132,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ system: process.env.GAME_SYSTEM || "dnd5e", check, dmg });
   });
 
+  // Quick start route - creates default character and adventure
+  app.post('/api/quick-start', isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if user already has a character
+      const existingCharacter = await storage.getUser(req.user.claims.sub);
+      if (existingCharacter) {
+        // Skip character creation, just initialize default adventure
+        const defaultTemplate = {
+          id: "forest-adventure",
+          name: "Forest Adventure",
+          setting: "Mystical Forest",
+          initialScene: "You find yourself at the edge of an ancient forest. The trees whisper secrets in a language older than memory, and strange lights dance between the branches. Your adventure begins now.",
+          initialQuest: {
+            title: "Explore the Mystical Forest",
+            description: "Venture into the ancient woodland and discover its secrets. The forest holds many mysteries waiting to be uncovered.",
+            priority: "high",
+            maxProgress: 100
+          }
+        };
+
+        // Initialize the adventure
+        await storage.updateGameState({
+          currentScene: defaultTemplate.initialScene,
+          inCombat: false,
+          currentTurn: null,
+          turnCount: 0,
+        });
+
+        // Create the initial quest
+        await storage.createQuest({
+          title: defaultTemplate.initialQuest.title,
+          description: defaultTemplate.initialQuest.description,
+          status: "active",
+          priority: defaultTemplate.initialQuest.priority,
+          progress: 0,
+          maxProgress: defaultTemplate.initialQuest.maxProgress,
+          reward: "Experience and story progression",
+          isMainStory: true,
+          parentQuestId: null,
+          chainId: null,
+        });
+
+        // Clear existing messages and create welcome message
+        await storage.clearMessages();
+        const welcomeMessage = await storage.createMessage({
+          content: "Welcome to your adventure! " + defaultTemplate.initialScene,
+          sender: "dm",
+          senderName: "Adventure Guide",
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        });
+
+        return res.json({ success: true, existingCharacter: true });
+      }
+
+      // Create default character
+      const defaultCharacter = {
+        name: "Hero",
+        class: "Fighter",
+        level: 1,
+        experience: 0,
+        strength: 14,
+        dexterity: 13,
+        constitution: 15,
+        intelligence: 12,
+        wisdom: 13,
+        charisma: 11,
+        maxHealth: 17, // 10 + CON modifier (2) + Fighter bonus (5)
+        currentHealth: 17,
+        maxMana: 1, // Minimal mana for non-casters
+        currentMana: 1
+      };
+
+      // Get or create active campaign
+      let activeCampaign = await storage.getActiveCampaign();
+      if (!activeCampaign) {
+        // Create a default campaign
+        activeCampaign = await storage.createCampaign({
+          name: "Your Adventure",
+          description: "An epic journey through mystical lands",
+          setting: "Fantasy"
+        });
+        await storage.setActiveCampaign(activeCampaign.id);
+      }
+
+      // Create character with campaignId
+      const character = await storage.createCharacter({
+        ...defaultCharacter,
+        campaignId: activeCampaign.id
+      });
+
+      // Initialize default adventure template
+      const defaultTemplate = {
+        id: "forest-adventure",
+        name: "Forest Adventure", 
+        setting: "Mystical Forest",
+        initialScene: "You find yourself at the edge of an ancient forest. The trees whisper secrets in a language older than memory, and strange lights dance between the branches. Your adventure begins now.",
+        initialQuest: {
+          title: "Explore the Mystical Forest",
+          description: "Venture into the ancient woodland and discover its secrets. The forest holds many mysteries waiting to be uncovered.",
+          priority: "high",
+          maxProgress: 100
+        }
+      };
+
+      // Update game state
+      await storage.updateGameState({
+        currentScene: defaultTemplate.initialScene,
+        inCombat: false,
+        currentTurn: null,
+        turnCount: 0,
+      });
+
+      // Create the initial quest
+      const quest = await storage.createQuest({
+        title: defaultTemplate.initialQuest.title,
+        description: defaultTemplate.initialQuest.description,
+        status: "active",
+        priority: defaultTemplate.initialQuest.priority,
+        progress: 0,
+        maxProgress: defaultTemplate.initialQuest.maxProgress,
+        reward: "Experience and story progression",
+        isMainStory: true,
+        parentQuestId: null,
+        chainId: null,
+      });
+
+      // Clear existing messages and create welcome message
+      await storage.clearMessages();
+      const welcomeMessage = await storage.createMessage({
+        content: "Welcome to your adventure, " + character.name + "! " + defaultTemplate.initialScene,
+        sender: "dm",
+        senderName: "Adventure Guide", 
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      });
+
+      res.json({
+        success: true,
+        character,
+        quest,
+        message: welcomeMessage,
+        gameState: await storage.getGameState(),
+      });
+    } catch (error) {
+      console.error("Error in quick start:", error);
+      res.status(500).json({ error: "Failed to quick start adventure" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
