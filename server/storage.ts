@@ -1,5 +1,6 @@
 import { 
   type User, 
+  type UpsertUser,
   type InsertUser,
   type Character,
   type InsertCharacter,
@@ -24,6 +25,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Character management
   getCharacter(): Promise<Character | undefined>;
@@ -232,6 +234,40 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existingUser = userData.id ? this.users.get(userData.id) : undefined;
+    
+    if (existingUser) {
+      // Update existing user
+      const updatedUser: User = {
+        ...existingUser,
+        email: userData.email || existingUser.email,
+        firstName: userData.firstName || existingUser.firstName,
+        lastName: userData.lastName || existingUser.lastName,
+        profileImageUrl: userData.profileImageUrl || existingUser.profileImageUrl,
+        updatedAt: new Date().toISOString(),
+      };
+      this.users.set(existingUser.id, updatedUser);
+      return updatedUser;
+    } else {
+      // Create new user
+      const id = userData.id || randomUUID();
+      const newUser: User = {
+        id,
+        username: userData.username || null,
+        password: userData.password || null,
+        email: userData.email || null,
+        firstName: userData.firstName || null,
+        lastName: userData.lastName || null,
+        profileImageUrl: userData.profileImageUrl || null,
+        createdAt: userData.createdAt || new Date().toISOString(),
+        updatedAt: userData.updatedAt || new Date().toISOString(),
+      };
+      this.users.set(id, newUser);
+      return newUser;
+    }
   }
 
   // Character management
@@ -496,7 +532,7 @@ export class MemStorage implements IStorage {
       content: message.content,
       sender: message.sender,
       senderName: message.senderName ?? null,
-      timestamp: message.timestamp,
+      timestamp: message.timestamp || new Date().toISOString(),
     };
     this.messages.push(newMessage);
     

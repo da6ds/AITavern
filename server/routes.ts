@@ -3,6 +3,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { randomUUID } from "crypto";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
   insertCharacterSchema,
   insertQuestSchema,
@@ -66,6 +67,25 @@ const updateItemSchema = insertItemSchema.partial().refine(
 );
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware setup
+  await setupAuth(app);
+
+  // Default API protection - all /api routes require authentication except for auth endpoints
+  app.use('/api', (req, res, next) => {
+    const openEndpoints = new Set([
+      '/api/login',
+      '/api/callback', 
+      '/api/logout',
+      '/api/debug/check'
+    ]);
+    
+    if (openEndpoints.has(req.path)) {
+      return next();
+    }
+    
+    return isAuthenticated(req, res, next);
+  });
+
   // Initialize storage with default data
   await storage.init();
 
@@ -80,8 +100,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ system: process.env.GAME_SYSTEM || "dnd5e", check, dmg });
   });
 
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // Character routes
-  app.get("/api/character", async (_req, res) => {
+  app.get("/api/character", isAuthenticated, async (_req, res) => {
     try {
       const character = await storage.getCharacter();
       if (!character) {
@@ -94,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/character", async (req, res) => {
+  app.post("/api/character", isAuthenticated, async (req, res) => {
     try {
       const result = insertCharacterSchema.safeParse(req.body);
       if (!result.success) {
@@ -112,7 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/character/:id", async (req, res) => {
+  app.patch("/api/character/:id", isAuthenticated, async (req, res) => {
     try {
       const result = updateCharacterSchema.safeParse(req.body);
       if (!result.success) {
@@ -150,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }),
   });
 
-  app.post("/api/adventure/initialize", async (req, res) => {
+  app.post("/api/adventure/initialize", isAuthenticated, async (req, res) => {
     try {
       const result = adventureTemplateSchema.safeParse(req.body);
       if (!result.success) {
@@ -228,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     name: z.string().min(1).max(100),
   });
 
-  app.post("/api/character/generate-portrait", async (req, res) => {
+  app.post("/api/character/generate-portrait", isAuthenticated, async (req, res) => {
     try {
       const result = portraitGenerationSchema.safeParse(req.body);
       if (!result.success) {
@@ -266,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enemy routes
-  app.get("/api/enemies", async (req, res) => {
+  app.get("/api/enemies", isAuthenticated, async (req, res) => {
     try {
       const combatId = req.query.combatId as string | undefined;
       const enemies = await storage.getEnemies(combatId);
@@ -277,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/enemies", async (req, res) => {
+  app.post("/api/enemies", isAuthenticated, async (req, res) => {
     try {
       const result = insertEnemySchema.safeParse(req.body);
       if (!result.success) {
@@ -294,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/enemies/:id", async (req, res) => {
+  app.patch("/api/enemies/:id", isAuthenticated, async (req, res) => {
     try {
       const result = updateEnemySchema.safeParse(req.body);
       if (!result.success) {
@@ -315,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Combat action endpoint
-  app.post("/api/combat/action", async (req, res) => {
+  app.post("/api/combat/action", isAuthenticated, async (req, res) => {
     try {
       const { action, targetId, spellId, itemId } = req.body;
 
@@ -577,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quest routes
-  app.get("/api/quests", async (_req, res) => {
+  app.get("/api/quests", isAuthenticated, async (_req, res) => {
     try {
       const quests = await storage.getQuests();
       res.json(quests);
@@ -587,7 +619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/quests/:id", async (req, res) => {
+  app.get("/api/quests/:id", isAuthenticated, async (req, res) => {
     try {
       const quest = await storage.getQuest(req.params.id);
       if (!quest) {
@@ -600,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/quests", async (req, res) => {
+  app.post("/api/quests", isAuthenticated, async (req, res) => {
     try {
       const result = insertQuestSchema.safeParse(req.body);
       if (!result.success) {
@@ -617,7 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/quests/:id", async (req, res) => {
+  app.patch("/api/quests/:id", isAuthenticated, async (req, res) => {
     try {
       const result = updateQuestSchema.safeParse(req.body);
       if (!result.success) {
@@ -637,7 +669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/quests/:id", async (req, res) => {
+  app.delete("/api/quests/:id", isAuthenticated, async (req, res) => {
     try {
       const deleted = await storage.deleteQuest(req.params.id);
       if (!deleted) {
@@ -651,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Inventory routes
-  app.get("/api/items", async (_req, res) => {
+  app.get("/api/items", isAuthenticated, async (_req, res) => {
     try {
       const items = await storage.getItems();
       res.json(items);
@@ -661,7 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/items/:id", async (req, res) => {
+  app.get("/api/items/:id", isAuthenticated, async (req, res) => {
     try {
       const item = await storage.getItem(req.params.id);
       if (!item) {
@@ -674,7 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/items", async (req, res) => {
+  app.post("/api/items", isAuthenticated, async (req, res) => {
     try {
       const result = insertItemSchema.safeParse(req.body);
       if (!result.success) {
@@ -691,7 +723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/items/:id", async (req, res) => {
+  app.patch("/api/items/:id", isAuthenticated, async (req, res) => {
     try {
       const result = updateItemSchema.safeParse(req.body);
       if (!result.success) {
@@ -711,7 +743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/items/:id", async (req, res) => {
+  app.delete("/api/items/:id", isAuthenticated, async (req, res) => {
     try {
       const deleted = await storage.deleteItem(req.params.id);
       if (!deleted) {
@@ -725,7 +757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Message routes for AI conversation
-  app.get("/api/messages", async (req, res) => {
+  app.get("/api/messages", isAuthenticated, async (req, res) => {
     try {
       let limit: number | undefined;
       if (req.query.limit) {
@@ -746,7 +778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/messages", async (req, res) => {
+  app.post("/api/messages", isAuthenticated, async (req, res) => {
     try {
       // Set server-side timestamp
       const messageData = {
@@ -773,7 +805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/messages", async (_req, res) => {
+  app.delete("/api/messages", isAuthenticated, async (_req, res) => {
     try {
       await storage.clearMessages();
       res.json({ success: true });
@@ -784,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Game state routes
-  app.get("/api/game-state", async (_req, res) => {
+  app.get("/api/game-state", isAuthenticated, async (_req, res) => {
     try {
       const gameState = await storage.getGameState();
       res.json(gameState);
@@ -794,7 +826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/game-state", async (req, res) => {
+  app.post("/api/game-state", isAuthenticated, async (req, res) => {
     try {
       const result = insertGameStateSchema.safeParse(req.body);
       if (!result.success) {
@@ -812,7 +844,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/game-state", async (req, res) => {
+  app.patch("/api/game-state", isAuthenticated, async (req, res) => {
     try {
       const gameState = await storage.updateGameState(req.body);
       res.json(gameState);
@@ -823,7 +855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Conversation endpoints
-  app.post("/api/ai/chat", async (req, res) => {
+  app.post("/api/ai/chat", isAuthenticated, async (req, res) => {
     try {
       const { message, isDirectDM } = req.body;
       if (!message || typeof message !== "string") {
@@ -1007,7 +1039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quick action endpoint for predefined actions
-  app.post("/api/ai/quick-action", async (req, res) => {
+  app.post("/api/ai/quick-action", isAuthenticated, async (req, res) => {
     try {
       const { action } = req.body;
       if (!action || typeof action !== "string") {
@@ -1194,7 +1226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Campaign routes
-  app.get("/api/campaigns", async (_req, res) => {
+  app.get("/api/campaigns", isAuthenticated, async (_req, res) => {
     try {
       const campaigns = await storage.getCampaigns();
       res.json(campaigns);
@@ -1204,7 +1236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/campaigns/active", async (_req, res) => {
+  app.get("/api/campaigns/active", isAuthenticated, async (_req, res) => {
     try {
       const campaign = await storage.getActiveCampaign();
       if (!campaign) {
@@ -1217,7 +1249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/campaigns", async (req, res) => {
+  app.post("/api/campaigns", isAuthenticated, async (req, res) => {
     try {
       const result = insertCampaignSchema
         .omit({ id: true, createdAt: true, lastPlayed: true, isActive: true })
@@ -1237,7 +1269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/campaigns/:id", async (req, res) => {
+  app.patch("/api/campaigns/:id", isAuthenticated, async (req, res) => {
     try {
       const result = updateCampaignSchema.safeParse(req.body);
       if (!result.success) {
@@ -1258,7 +1290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/campaigns/:id/activate", async (req, res) => {
+  app.patch("/api/campaigns/:id/activate", isAuthenticated, async (req, res) => {
     try {
       const campaign = await storage.setActiveCampaign(req.params.id);
       if (!campaign) {
@@ -1271,7 +1303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/campaigns/:id", async (req, res) => {
+  app.delete("/api/campaigns/:id", isAuthenticated, async (req, res) => {
     try {
       const deleted = await storage.deleteCampaign(req.params.id);
       if (!deleted) {

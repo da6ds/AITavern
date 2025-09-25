@@ -8,6 +8,7 @@ import { TooltipProvider as CustomTooltipProvider } from "@/components/TooltipPr
 import SettingsDropdown from "@/components/SettingsDropdown";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 // Components
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -26,6 +27,7 @@ import DemoTooltip from "./components/DemoTooltip";
 import ThemeToggle from "./components/ThemeToggle";
 import CharacterCreation from "./components/CharacterCreation";
 import AdventureTemplates from "./components/AdventureTemplates";
+import LandingPage from "./components/LandingPage";
 import { useTooltips } from "./hooks/useTooltips";
 import { useNotifications } from "./hooks/useNotifications";
 
@@ -507,6 +509,31 @@ function GameApp() {
   );
 }
 
+function AppRouter() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  const handleLogin = () => {
+    window.location.href = "/api/login";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading Skunk Tales...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LandingPage onLogin={handleLogin} />;
+  }
+
+  return <GameApp />;
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -514,7 +541,7 @@ function App() {
         <ThemeProvider defaultTheme="dark">
           <TooltipProvider>
             <CustomTooltipProvider>
-              <GameApp />
+              <AppRouter />
               <Toaster />
             </CustomTooltipProvider>
           </TooltipProvider>
