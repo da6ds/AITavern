@@ -170,7 +170,11 @@ export default function ChatInterface({
                         content={message.content} 
                         character={character}
                         messages={messages}
-                        className="text-sm text-foreground"
+                        className={
+                          message.sender === "dm" 
+                            ? "text-base leading-relaxed text-foreground font-medium" 
+                            : "text-sm text-foreground"
+                        }
                       />
                     </div>
                   </div>
@@ -201,15 +205,15 @@ export default function ChatInterface({
               </Button>
               
               <div className="flex-1 flex gap-2">
-                <input
-                  type="text"
+                <textarea
                   placeholder={isListening ? "Listening..." : isDirectDM ? "Ask the DM..." : "Say or do something..."}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSend()}
-                  className="flex-1 px-3 py-2 bg-muted rounded-md text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                  className="flex-1 px-4 py-3 bg-muted rounded-md text-base text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary resize-none min-h-[60px] max-h-[120px]"
                   disabled={isListening || isLoading}
                   data-testid="input-chat-message"
+                  rows={2}
                 />
                 <Button 
                   size="icon" 
