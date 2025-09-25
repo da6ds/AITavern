@@ -23,15 +23,18 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js for RESTful API endpoints
 - **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
 - **AI Integration**: OpenAI GPT-5 for intelligent game master functionality
+- **Authentication**: Replit Auth with OpenID Connect supporting SSO (Google, GitHub, X, Apple) and email/password
 - **Session Management**: PostgreSQL-based session storage with connect-pg-simple
 - **Build System**: Vite for fast development and optimized production builds
 
 ### Data Models
+- **User System**: Authentication with Replit Auth, supporting multiple adventures per user account
 - **Character System**: D&D-style attributes (strength, dexterity, constitution, intelligence, wisdom, charisma) with health/mana tracking
 - **Quest Management**: Hierarchical quest system with progress tracking, priorities, and quest chains
 - **Inventory System**: Item management with types (weapon, armor, consumable, misc) and rarity levels
 - **Combat System**: Turn-based combat with enemy management and game state tracking
 - **Message History**: Persistent chat logs with support for DM, player, and NPC messages
+- **Adventure Management**: Multiple campaigns per user with save/resume functionality
 
 ### Game Logic
 - **AI Storyteller**: Contextual responses based on character stats, current quests, and game state

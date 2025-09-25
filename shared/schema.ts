@@ -136,17 +136,35 @@ export type InsertEnemy = z.infer<typeof insertEnemySchema>;
 export type InsertGameState = z.infer<typeof insertGameStateSchema>;
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 
-// Legacy user schema for compatibility
+// Session storage table for authentication
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: text("sess").notNull(), // Using text instead of jsonb for broader compatibility
+    expire: text("expire").notNull(), // Using text timestamp for consistency
+  }
+);
+
+// User storage table for authentication
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  // Legacy fields for compatibility
+  username: text("username").unique(),
+  password: text("password"),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
+export const insertUserSchema = createInsertSchema(users);
+export const upsertUserSchema = insertUserSchema.omit({ createdAt: true, updatedAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;

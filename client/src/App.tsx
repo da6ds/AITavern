@@ -6,8 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TooltipVisibilityProvider } from "@/components/TooltipProvider";
 import SettingsDropdown from "@/components/SettingsDropdown";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LogIn, LogOut, User } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 // Components
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -36,6 +37,7 @@ type TabType = "character" | "quests" | "inventory" | "chat";
 type ViewType = "welcome" | "startMenu" | "userGuide" | "characterCreation" | "adventureTemplates" | "game";
 
 function GameApp() {
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>("welcome");
   const [activeTab, setActiveTab] = useState<TabType>("character");
   const [isListening, setIsListening] = useState(false);
@@ -65,6 +67,13 @@ function GameApp() {
       setCurrentView("startMenu");
     }
   }, [demoCompleted, seenTooltips.size, currentView]);
+
+  // Handle authentication redirects
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated && currentView !== "welcome") {
+      setCurrentView("welcome");
+    }
+  }, [authLoading, isAuthenticated, currentView]);
   
   // Fetch real data from backend
   const { data: character, isLoading: characterLoading } = useQuery<Character>({
@@ -443,7 +452,45 @@ function GameApp() {
               campaignId={campaign?.id}
             />
           </div>
-          <SettingsDropdown />
+          <div className="flex items-center space-x-2">
+            {isAuthenticated && user && (
+              <div className="flex items-center space-x-2">
+                <div className="hidden sm:flex items-center space-x-2">
+                  {user.profileImageUrl && (
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt="Profile" 
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    {user.firstName || user.email?.split('@')[0] || 'Player'}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.location.href = '/api/logout'}
+                  data-testid="button-logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">Logout</span>
+                </Button>
+              </div>
+            )}
+            {!isAuthenticated && !authLoading && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = '/api/login'}
+                data-testid="button-login"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden sm:inline ml-1">Login</span>
+              </Button>
+            )}
+            <SettingsDropdown />
+          </div>
         </div>
       </div>
       

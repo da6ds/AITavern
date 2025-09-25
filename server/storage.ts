@@ -1,6 +1,7 @@
 import { 
   type User, 
   type InsertUser,
+  type UpsertUser,
   type Character,
   type InsertCharacter,
   type Quest,
@@ -20,10 +21,11 @@ import { randomUUID } from "crypto";
 
 // AI TTRPG Game Storage Interface
 export interface IStorage {
-  // User management (legacy)
+  // User management - required for Replit Auth
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Character management
   getCharacter(): Promise<Character | undefined>;
@@ -189,9 +191,52 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const now = new Date().toISOString();
+    const user: User = { 
+      id,
+      email: insertUser.email || null,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      profileImageUrl: insertUser.profileImageUrl || null,
+      username: insertUser.username || null,
+      password: insertUser.password || null,
+      createdAt: now,
+      updatedAt: now
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existing = this.users.get(userData.id!);
+    const now = new Date().toISOString();
+    
+    if (existing) {
+      // Update existing user
+      const updatedUser: User = {
+        ...existing,
+        ...userData,
+        id: userData.id!, // Ensure id is preserved
+        updatedAt: now
+      };
+      this.users.set(userData.id!, updatedUser);
+      return updatedUser;
+    } else {
+      // Create new user
+      const newUser: User = {
+        id: userData.id!,
+        email: userData.email || null,
+        firstName: userData.firstName || null,
+        lastName: userData.lastName || null,
+        profileImageUrl: userData.profileImageUrl || null,
+        username: userData.username || null,
+        password: userData.password || null,
+        createdAt: now,
+        updatedAt: now
+      };
+      this.users.set(userData.id!, newUser);
+      return newUser;
+    }
   }
 
   // Character management
@@ -217,6 +262,9 @@ export class MemStorage implements IStorage {
       maxHealth: character.maxHealth,
       currentMana: character.currentMana ?? 0,
       maxMana: character.maxMana ?? 0,
+      portraitUrl: character.portraitUrl || null,
+      appearance: character.appearance || null,
+      backstory: character.backstory || null,
     };
     this.character = newCharacter;
     return this.character;
