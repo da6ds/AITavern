@@ -186,13 +186,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
           chainId: null,
         });
 
-        // Clear existing messages and create welcome message
+        // Clear existing messages and create enhanced welcome message
         await storage.clearMessages();
+        
+        // Get character for enhanced message context
+        const character = await storage.getCharacter();
+        
+        // Generate enhanced welcome message using AI (with robust fallback)
+        let enhancedWelcomeResponse;
+        try {
+          enhancedWelcomeResponse = await aiService.generateEnhancedWelcomeMessage(defaultTemplate, character);
+        } catch (error) {
+          console.error('Failed to generate enhanced welcome message for quick-start, using fallback:', error);
+          
+          // Robust fallback message that always works
+          const characterIntro = character ? ` ${character.name}, a level ${character.level} ${character.class},` : '';
+          enhancedWelcomeResponse = {
+            content: `🏰 **Welcome to ${defaultTemplate.name}!** 🏰
+
+You${characterIntro} find yourself in ${defaultTemplate.initialScene}. The air is thick with possibility and adventure beckons from every shadow.
+
+**Current Objective:** ${defaultTemplate.initialQuest.description}
+
+**What would you like to do?**
+• 🗡️ **Investigate** your immediate surroundings
+• 💬 **Speak** to any nearby NPCs  
+• 🎒 **Check** your equipment and supplies
+• 🏃 **Move** toward your objective
+
+Choose your path, adventurer. Your destiny awaits!`,
+            sender: 'dm',
+            senderName: null,
+            actions: {
+              updateGameState: { 
+                currentScene: defaultTemplate.initialScene, 
+                inCombat: false
+              }
+            }
+          };
+        }
+        
         const welcomeMessage = await storage.createMessage({
           campaignId: activeCampaign.id,
-          content: "Welcome to your adventure! " + defaultTemplate.initialScene,
-          sender: "dm",
-          senderName: "Adventure Guide",
+          content: enhancedWelcomeResponse.content,
+          sender: enhancedWelcomeResponse.sender,
+          senderName: enhancedWelcomeResponse.senderName,
           timestamp: new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -466,8 +504,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get character for enhanced message context
       const character = await storage.getCharacter();
       
-      // Generate enhanced welcome message using AI
-      const enhancedWelcomeResponse = await aiService.generateEnhancedWelcomeMessage(template, character);
+      // Generate enhanced welcome message using AI (with robust fallback)
+      let enhancedWelcomeResponse;
+      try {
+        enhancedWelcomeResponse = await aiService.generateEnhancedWelcomeMessage(template, character);
+      } catch (error) {
+        console.error('Failed to generate enhanced welcome message, using basic fallback:', error);
+        
+        // Robust fallback message that always works
+        const characterIntro = character ? ` ${character.name}, a level ${character.level} ${character.class},` : '';
+        enhancedWelcomeResponse = {
+          content: `🏰 **Welcome to ${template.name}!** 🏰
+
+You${characterIntro} find yourself in ${template.initialScene}. The air is thick with possibility and adventure beckons from every shadow.
+
+**Current Objective:** ${template.initialQuest.description}
+
+**What would you like to do?**
+• 🗡️ **Investigate** your immediate surroundings
+• 💬 **Speak** to any nearby NPCs  
+• 🎒 **Check** your equipment and supplies
+• 🏃 **Move** toward your objective
+
+Choose your path, adventurer. Your destiny awaits!`,
+          sender: 'dm',
+          senderName: null,
+          actions: {
+            updateGameState: { 
+              currentScene: template.initialScene, 
+              inCombat: false
+            }
+          }
+        };
+      }
       
       const welcomeMessage = await storage.createMessage({
         campaignId: activeCampaign.id,
@@ -653,7 +722,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
 
             // Store the enemy turn message for consistency
+            const activeCampaign = await storage.getActiveCampaign();
             const message = await storage.createMessage({
+              campaignId: activeCampaign?.id || 'default',
               content: "Enemy completes their turn. It's your turn now!",
               sender: "dm",
               senderName: null,
@@ -674,7 +745,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const aiResponse = await aiService.generateResponse(actionMessage);
 
       // Store messages
+      const activeCampaign = await storage.getActiveCampaign();
       await storage.createMessage({
+        campaignId: activeCampaign?.id || 'default',
         content: actionMessage,
         sender: "player",
         senderName: null,
@@ -685,6 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const aiMessage = await storage.createMessage({
+        campaignId: activeCampaign?.id || 'default',
         content: aiResponse.content,
         sender: aiResponse.sender,
         senderName: aiResponse.senderName,
@@ -1130,7 +1204,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store the player message
+      const activeCampaign = await storage.getActiveCampaign();
       await storage.createMessage({
+        campaignId: activeCampaign?.id || 'default',
         content: message,
         sender: "player",
         senderName: null,
@@ -1142,6 +1218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Store the AI response
       const aiMessage = await storage.createMessage({
+        campaignId: activeCampaign?.id || 'default',
         content: aiResponse.content,
         sender: aiResponse.sender,
         senderName: aiResponse.senderName,
@@ -1327,7 +1404,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const aiResponse = await aiService.generateResponse(actionMessage);
 
       // Store messages and apply actions (same as regular chat)
+      const activeCampaign = await storage.getActiveCampaign();
       await storage.createMessage({
+        campaignId: activeCampaign?.id || 'default',
         content: actionMessage,
         sender: "player",
         senderName: null,
@@ -1338,6 +1417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const aiMessage = await storage.createMessage({
+        campaignId: activeCampaign?.id || 'default',
         content: aiResponse.content,
         sender: aiResponse.sender,
         senderName: aiResponse.senderName,
