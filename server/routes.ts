@@ -21,7 +21,6 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { aiService } from "./aiService";
-import { setupAuth, isAuthenticated } from "./replitAuth";
 
 // Validation schemas for updates
 const updateCharacterSchema = insertCharacterSchema.partial().refine(
@@ -67,23 +66,8 @@ const updateItemSchema = insertItemSchema.partial().refine(
 );
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
   // Initialize storage with default data
   await storage.init();
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
 
   app.get("/api/debug/check", (_req, res) => {
     console.log("✅ /api/debug/check registered & hit");

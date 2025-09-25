@@ -1,10 +1,10 @@
-# Skunk Tales - Cozy AI Adventure Game
+# AI TTRPG Mobile Game
 
 ## Overview
 
-Skunk Tales is a cozy AI-powered adventure game built as a mobile-first web application. The game features a friendly AI storyteller powered by OpenAI's GPT model that creates dynamic storylines, manages encounters, and controls NPCs. Players interact through a chat interface while managing their character, quests, and inventory through dedicated mobile-optimized screens.
+This is an AI-powered tabletop role-playing game (TTRPG) built as a mobile-first web application. The game features an intelligent Dungeon Master powered by OpenAI's GPT model that creates dynamic storylines, manages combat encounters, and controls NPCs. Players interact through a chat interface while managing their character, quests, and inventory through dedicated mobile-optimized screens.
 
-The application combines cozy storytelling with modern mobile gaming UI patterns, featuring real-time AI responses, gentle turn-based encounters, and persistent game state management.
+The application combines the immersive storytelling of traditional D&D with modern mobile gaming UI patterns, featuring real-time AI responses, turn-based combat, and persistent game state management.
 
 ## User Preferences
 
@@ -23,21 +23,18 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js for RESTful API endpoints
 - **Database**: PostgreSQL with Drizzle ORM for type-safe database operations
 - **AI Integration**: OpenAI GPT-5 for intelligent game master functionality
-- **Authentication**: Replit Auth with OpenID Connect supporting SSO (Google, GitHub, X, Apple) and email/password
 - **Session Management**: PostgreSQL-based session storage with connect-pg-simple
 - **Build System**: Vite for fast development and optimized production builds
 
 ### Data Models
-- **User System**: Authentication with Replit Auth, supporting multiple adventures per user account
 - **Character System**: D&D-style attributes (strength, dexterity, constitution, intelligence, wisdom, charisma) with health/mana tracking
 - **Quest Management**: Hierarchical quest system with progress tracking, priorities, and quest chains
 - **Inventory System**: Item management with types (weapon, armor, consumable, misc) and rarity levels
 - **Combat System**: Turn-based combat with enemy management and game state tracking
 - **Message History**: Persistent chat logs with support for DM, player, and NPC messages
-- **Adventure Management**: Multiple campaigns per user with save/resume functionality
 
 ### Game Logic
-- **AI Storyteller**: Contextual responses based on character stats, current quests, and game state
+- **AI Game Master**: Contextual responses based on character stats, current quests, and game state
 - **Dynamic Quest Generation**: AI-driven quest creation and progression
 - **Combat Management**: Automated turn-based combat with strategic AI enemy behavior
 - **Game State Persistence**: Continuous save system maintaining all game progress
@@ -47,7 +44,7 @@ Preferred communication style: Simple, everyday language.
 ### Core Dependencies
 - **@neondatabase/serverless**: PostgreSQL database connectivity
 - **drizzle-orm**: Type-safe database ORM with schema validation
-- **OpenAI API**: GPT-5 integration for AI storyteller functionality
+- **OpenAI API**: GPT-5 integration for AI game master functionality
 - **@tanstack/react-query**: Client-side data fetching and caching
 
 ### UI/UX Libraries

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 
 type TooltipContextType = {
   showTooltips: boolean;
@@ -7,7 +7,7 @@ type TooltipContextType = {
 
 const TooltipContext = createContext<TooltipContextType | undefined>(undefined);
 
-export function TooltipVisibilityProvider({ children }: { children: React.ReactNode }) {
+export function TooltipProvider({ children }: { children: React.ReactNode }) {
   const [showTooltips, setShowTooltips] = useState(() => {
     if (typeof window === 'undefined') return true;
     try {
@@ -19,7 +19,7 @@ export function TooltipVisibilityProvider({ children }: { children: React.ReactN
   });
 
   const toggleTooltips = useCallback(() => {
-    setShowTooltips((prev: boolean) => {
+    setShowTooltips(prev => {
       const newValue = !prev;
       try {
         localStorage.setItem("show-tooltips", JSON.stringify(newValue));
@@ -30,13 +30,13 @@ export function TooltipVisibilityProvider({ children }: { children: React.ReactN
     });
   }, []);
 
-  const value = useMemo(() => ({
+  const value = useCallback(() => ({
     showTooltips,
     toggleTooltips
   }), [showTooltips, toggleTooltips]);
 
   return (
-    <TooltipContext.Provider value={value}>
+    <TooltipContext.Provider value={value()}>
       {children}
     </TooltipContext.Provider>
   );
