@@ -44,11 +44,11 @@ export default function StickyBottomActions({
             <Button
               variant="outline"
               onClick={onBack}
-              className="flex-1 min-h-[2.75rem] text-xs sm:text-sm px-2 sm:px-4"
+              className="flex-1 min-h-[2.75rem] text-xs sm:text-sm px-2 sm:px-3 truncate"
               data-testid="button-back"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {backLabel}
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 shrink-0" />
+              <span className="truncate">{backLabel}</span>
             </Button>
           )}
           
@@ -56,14 +56,14 @@ export default function StickyBottomActions({
             <Button
               onClick={onContinue}
               disabled={continueDisabled}
-              className="flex-1 min-h-[2.75rem] text-xs sm:text-sm px-2 sm:px-4 bg-gradient-to-r from-amber-600 to-green-600 hover:from-amber-700 hover:to-green-700 truncate"
+              className="flex-1 min-h-[2.75rem] text-xs sm:text-sm px-2 sm:px-3 bg-gradient-to-r from-amber-600 to-green-600 hover:from-amber-700 hover:to-green-700 truncate"
               data-testid="button-continue"
             >
-              {continueLabel}
+              <span className="truncate">{continueLabel}</span>
               {continueLabel.includes("Start") || continueLabel.includes("Play") ? (
-                <Play className="w-4 h-4 ml-2" />
+                <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2 shrink-0" />
               ) : (
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2 shrink-0" />
               )}
             </Button>
           )}
@@ -75,10 +75,10 @@ export default function StickyBottomActions({
             <Button
               variant="ghost"
               onClick={onSkip}
-              className="min-h-[2.75rem] text-xs sm:text-sm text-muted-foreground hover:text-foreground truncate"
+              className="min-h-[2.75rem] text-xs sm:text-sm text-muted-foreground hover:text-foreground px-3 truncate max-w-xs"
               data-testid="button-skip"
             >
-              {skipLabel}
+              <span className="truncate">{skipLabel}</span>
             </Button>
           </div>
         )}

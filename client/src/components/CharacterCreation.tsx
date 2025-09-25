@@ -158,67 +158,68 @@ export default function CharacterCreation({
   const renderBasicsStep = () => (
     <>
       <div className="pb-32"> {/* Add padding for sticky bottom nav */}
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader className="text-center">
-            <CardTitle className="font-serif text-2xl flex items-center justify-center gap-2">
-              <User className="w-6 h-6 text-primary" />
+        <Card className="max-w-lg mx-auto">
+          <CardHeader className="text-center pb-3">
+            <CardTitle className="font-serif text-lg sm:text-xl flex items-center justify-center gap-2">
+              <User className="w-5 h-5 text-primary" />
               Create Your Character
             </CardTitle>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Tell us about your adventurer's identity and background
             </p>
           </CardHeader>
-          <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="character-name">Character Name</Label>
+          <CardContent className="space-y-4">
+        <div className="space-y-1">
+          <Label htmlFor="character-name" className="text-sm">Character Name</Label>
           <Input
             id="character-name"
             placeholder="Enter your character's name..."
             value={character.name}
             onChange={(e) => setCharacter(prev => ({ ...prev, name: e.target.value }))}
             data-testid="input-character-name"
+            className="text-sm"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="character-appearance">Physical Appearance</Label>
+        <div className="space-y-1">
+          <Label htmlFor="character-appearance" className="text-sm">Physical Appearance</Label>
           <Textarea
             id="character-appearance"
             placeholder="Describe what your character looks like. Be as detailed as you'd like - this will help generate your portrait!"
             value={character.appearance}
             onChange={(e) => setCharacter(prev => ({ ...prev, appearance: e.target.value }))}
-            rows={3}
+            rows={2}
             data-testid="textarea-character-appearance"
+            className="text-sm resize-none"
           />
           <p className="text-xs text-muted-foreground">
             Example: "A tall elf with silver hair and piercing blue eyes, wearing a dark hooded cloak"
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="character-backstory">Character Backstory</Label>
+        <div className="space-y-1">
+          <Label htmlFor="character-backstory" className="text-sm">Character Backstory</Label>
           <Textarea
             id="character-backstory"
             placeholder="What's your character's history? Where do they come from? What drives them to adventure?"
             value={character.backstory}
             onChange={(e) => setCharacter(prev => ({ ...prev, backstory: e.target.value }))}
-            rows={4}
+            rows={2}
             data-testid="textarea-character-backstory"
+            className="text-sm resize-none"
           />
         </div>
 
-            <div className="pt-4 space-y-4">
-              <div className="flex justify-center">
-                <Button
-                  variant="outline"
-                  onClick={generateRandomCharacter}
-                  className="w-full"
-                  data-testid="button-random-character"
-                >
-                  <Dice6 className="w-4 h-4 mr-2" />
-                  Quick Start - Generate Random Character
-                </Button>
-              </div>
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                onClick={generateRandomCharacter}
+                className="w-full text-sm"
+                data-testid="button-random-character"
+              >
+                <Dice6 className="w-4 h-4 mr-2" />
+                Quick Start - Generate Random Character
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -249,58 +250,60 @@ export default function CharacterCreation({
   const renderPortraitStep = () => (
     <>
       <div className="pb-32"> {/* Add padding for sticky bottom nav */}
-        <Card className="max-w-2xl mx-auto">
-      <CardHeader className="text-center">
-        <CardTitle className="font-serif text-2xl flex items-center justify-center gap-2">
-          <Wand2 className="w-6 h-6 text-primary" />
+        <Card className="max-w-lg mx-auto">
+      <CardHeader className="text-center pb-3">
+        <CardTitle className="font-serif text-lg sm:text-xl flex items-center justify-center gap-2">
+          <Wand2 className="w-5 h-5 text-primary" />
           Generate Your Portrait
         </CardTitle>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Create an AI-generated image of your character
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="text-center space-y-4">
+      <CardContent className="space-y-4">
+        <div className="text-center space-y-3">
           {character.portraitUrl ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <img
                 src={character.portraitUrl}
                 alt="Character Portrait"
-                className="w-64 h-64 mx-auto rounded-lg border-2 border-primary/20"
+                className="w-48 h-48 sm:w-56 sm:h-56 mx-auto rounded-lg border-2 border-primary/20 object-cover"
                 data-testid="character-portrait"
               />
-              <div className="flex gap-2 justify-center">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   onClick={generatePortrait}
                   disabled={isGeneratingPortrait}
                   data-testid="button-regenerate-portrait"
+                  className="text-xs"
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isGeneratingPortrait ? 'animate-spin' : ''}`} />
-                  Generate New Portrait
+                  <RefreshCw className={`w-3 h-3 mr-1 ${isGeneratingPortrait ? 'animate-spin' : ''}`} />
+                  Generate New
                 </Button>
                 <Button
                   variant="outline"
                   onClick={triggerFileUpload}
                   data-testid="button-upload-portrait"
+                  className="text-xs"
                 >
-                  <Upload className="w-4 h-4 mr-2" />
+                  <Upload className="w-3 h-3 mr-1" />
                   Upload Your Own
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="w-64 h-64 mx-auto border-2 border-dashed border-muted rounded-lg flex items-center justify-center bg-muted/10">
+            <div className="space-y-3">
+              <div className="w-48 h-48 sm:w-56 sm:h-56 mx-auto border-2 border-dashed border-muted rounded-lg flex items-center justify-center bg-muted/10">
                 {isGeneratingPortrait ? (
                   <div className="text-center">
-                    <RefreshCw className="w-8 h-8 mx-auto animate-spin text-primary mb-2" />
-                    <p className="text-sm text-muted-foreground">Generating portrait...</p>
+                    <RefreshCw className="w-6 h-6 mx-auto animate-spin text-primary mb-2" />
+                    <p className="text-xs text-muted-foreground">Generating portrait...</p>
                   </div>
                 ) : (
                   <div className="text-center">
-                    <Wand2 className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Click below to generate</p>
+                    <Image className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-xs text-muted-foreground">Character Portrait</p>
                   </div>
                 )}
               </div>
@@ -308,20 +311,20 @@ export default function CharacterCreation({
                 <Button
                   onClick={generatePortrait}
                   disabled={isGeneratingPortrait}
-                  className="w-full"
+                  className="w-full text-sm"
                   data-testid="button-generate-portrait"
                 >
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Generate Portrait with AI
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isGeneratingPortrait ? 'animate-spin' : ''}`} />
+                  Generate New Portrait
                 </Button>
                 <Button
                   variant="outline"
                   onClick={triggerFileUpload}
-                  className="w-full"
+                  className="w-full text-sm"
                   data-testid="button-upload-portrait"
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Upload Your Own Image
+                  Upload Your Image
                 </Button>
               </div>
             </div>
@@ -521,38 +524,36 @@ export default function CharacterCreation({
 
   return (
     <div className={`min-h-screen bg-background text-foreground p-4 ${className}`}>
-      {/* Progress indicator - only show for non-template steps */}
-      {currentStep !== "templates" && (
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            {["basics", "portrait", "questionnaire", "abilities"].map((step, index) => (
-              <div key={step} className="flex items-center">
-                <div className={`
-                  w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                  ${currentStep === step ? 'bg-primary text-primary-foreground' : 
-                    ["basics", "portrait", "questionnaire", "abilities"].indexOf(currentStep) > index 
-                      ? 'bg-primary/20 text-primary' 
-                      : 'bg-muted text-muted-foreground'}
-                `}>
-                  {index + 1}
-                </div>
-                {index < 3 && (
-                  <div className={`w-8 h-0.5 mx-2 ${
-                    ["basics", "portrait", "questionnaire", "abilities"].indexOf(currentStep) > index 
-                      ? 'bg-primary' 
-                      : 'bg-muted'
-                  }`} />
-                )}
+      {/* Progress indicator - show for all steps */}
+      <div className="max-w-2xl mx-auto mb-6">
+        <div className="flex items-center justify-center space-x-2 mb-3">
+          {["templates", "basics", "portrait", "questionnaire", "abilities"].map((step, index) => (
+            <div key={step} className="flex items-center">
+              <div className={`
+                w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium
+                ${currentStep === step ? 'bg-primary text-primary-foreground' : 
+                  ["templates", "basics", "portrait", "questionnaire", "abilities"].indexOf(currentStep) > index 
+                    ? 'bg-primary/20 text-primary' 
+                    : 'bg-muted text-muted-foreground'}
+              `}>
+                {index + 1}
               </div>
-            ))}
-          </div>
-          <div className="text-center">
-            <Badge variant="secondary" className="text-xs">
-              Step {["basics", "portrait", "questionnaire", "abilities"].indexOf(currentStep) + 1} of 4
-            </Badge>
-          </div>
+              {index < 4 && (
+                <div className={`w-6 h-0.5 mx-1 ${
+                  ["templates", "basics", "portrait", "questionnaire", "abilities"].indexOf(currentStep) > index 
+                    ? 'bg-primary' 
+                    : 'bg-muted'
+                }`} />
+              )}
+            </div>
+          ))}
         </div>
-      )}
+        <div className="text-center">
+          <Badge variant="secondary" className="text-xs">
+            Step {["templates", "basics", "portrait", "questionnaire", "abilities"].indexOf(currentStep) + 1} of 5
+          </Badge>
+        </div>
+      </div>
 
       {renderCurrentStep()}
     </div>

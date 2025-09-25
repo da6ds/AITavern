@@ -15,6 +15,7 @@ import {
   Shuffle,
   User
 } from "lucide-react";
+import StickyBottomActions from "./StickyBottomActions";
 
 interface CharacterTemplate {
   id: string;
@@ -301,102 +302,91 @@ export default function CharacterTemplates({
 
   if (selectedTemplate) {
     return (
-      <div className={`min-h-screen bg-background text-foreground p-4 ${className}`}>
-        <div className="max-w-2xl mx-auto">
-          <Card className={getThemeColors(selectedTemplate.theme)}>
-            <CardHeader className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                {selectedTemplate.icon}
-                <CardTitle className="font-serif text-2xl">
-                  {selectedTemplate.name} - {selectedTemplate.title}
-                </CardTitle>
-              </div>
-              <p className="text-muted-foreground">{selectedTemplate.description}</p>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              {/* Character Details */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <Badge variant="secondary">{selectedTemplate.race}</Badge>
-                  <p className="text-xs text-muted-foreground mt-1">Race</p>
+      <>
+        <div className={`min-h-screen bg-background text-foreground p-4 pb-32 ${className}`}>
+          <div className="max-w-lg mx-auto">
+            <Card className={getThemeColors(selectedTemplate.theme)}>
+              <CardHeader className="text-center pb-3">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  {selectedTemplate.icon}
+                  <CardTitle className="font-serif text-xl sm:text-2xl">
+                    {selectedTemplate.name}
+                  </CardTitle>
                 </div>
-                <div className="text-center">
-                  <Badge variant="secondary">{selectedTemplate.class}</Badge>
-                  <p className="text-xs text-muted-foreground mt-1">Class</p>
+                <p className="text-base font-medium text-primary">{selectedTemplate.title}</p>
+                <p className="text-sm text-muted-foreground">{selectedTemplate.description}</p>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {/* Character Details */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center">
+                    <Badge variant="secondary" className="text-xs">{selectedTemplate.race}</Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Race</p>
+                  </div>
+                  <div className="text-center">
+                    <Badge variant="secondary" className="text-xs">{selectedTemplate.class}</Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Class</p>
+                  </div>
+                  <div className="text-center">
+                    <Badge variant="secondary" className="text-xs">{selectedTemplate.background}</Badge>
+                    <p className="text-xs text-muted-foreground mt-1">Background</p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <Badge variant="secondary">{selectedTemplate.background}</Badge>
-                  <p className="text-xs text-muted-foreground mt-1">Background</p>
+
+                {/* Personality */}
+                <div>
+                  <h4 className="font-medium mb-2 text-sm">Personality</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedTemplate.personality.map((trait) => (
+                      <Badge key={trait} variant="outline" className="text-xs px-2 py-1">
+                        {trait}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <Separator />
-
-              {/* Personality */}
-              <div>
-                <h4 className="font-medium mb-2">Personality</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedTemplate.personality.map((trait) => (
-                    <Badge key={trait} variant="outline" className="text-xs">
-                      {trait}
-                    </Badge>
-                  ))}
+                {/* Appearance */}
+                <div>
+                  <h4 className="font-medium mb-2 text-sm">Appearance</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{selectedTemplate.appearance}</p>
                 </div>
-              </div>
 
-              {/* Appearance */}
-              <div>
-                <h4 className="font-medium mb-2">Appearance</h4>
-                <p className="text-sm text-muted-foreground">{selectedTemplate.appearance}</p>
-              </div>
+                {/* Backstory */}
+                <div>
+                  <h4 className="font-medium mb-2 text-sm">Backstory</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{selectedTemplate.backstory}</p>
+                </div>
 
-              {/* Backstory */}
-              <div>
-                <h4 className="font-medium mb-2">Backstory</h4>
-                <p className="text-sm text-muted-foreground">{selectedTemplate.backstory}</p>
-              </div>
-
-              {/* Ability Scores */}
-              <div>
-                <h4 className="font-medium mb-3">Ability Scores</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {Object.entries(selectedTemplate.abilities).map(([ability, score]) => (
-                    <div key={ability} className="text-center p-2 bg-muted/20 rounded">
-                      <div className="font-medium text-sm capitalize">{ability.slice(0, 3)}</div>
-                      <div className="text-lg font-bold">{score}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {score >= 10 ? `+${Math.floor((score - 10) / 2)}` : Math.floor((score - 10) / 2)}
+                {/* Ability Scores */}
+                <div>
+                  <h4 className="font-medium mb-2 text-sm">Ability Scores</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                    {Object.entries(selectedTemplate.abilities).map(([ability, score]) => (
+                      <div key={ability} className="text-center p-2 bg-muted/20 rounded">
+                        <div className="font-medium text-xs capitalize">{ability.slice(0, 3)}</div>
+                        <div className="text-sm font-bold">{score}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {score >= 10 ? `+${Math.floor((score - 10) / 2)}` : Math.floor((score - 10) / 2)}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedTemplate(null)}
-                  className="flex-1"
-                  data-testid="button-template-back"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Choose Different
-                </Button>
-                <Button
-                  onClick={() => onSelectTemplate(selectedTemplate)}
-                  className="flex-1"
-                  data-testid="button-template-select"
-                >
-                  Use This Character
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+        
+        <StickyBottomActions
+          onBack={() => setSelectedTemplate(null)}
+          onContinue={() => onSelectTemplate(selectedTemplate)}
+          backLabel="Back"
+          continueLabel="Use This Character"
+          showSkip={false}
+          data-testid="template-detail-actions"
+        />
+      </>
     );
   }
 
@@ -404,62 +394,62 @@ export default function CharacterTemplates({
     <div className={`min-h-screen bg-background text-foreground p-4 ${className}`}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <Card className="mb-8">
-          <CardHeader className="text-center">
-            <CardTitle className="font-serif text-3xl flex items-center justify-center gap-2">
-              <User className="w-8 h-8 text-primary" />
+        <Card className="mb-6">
+          <CardHeader className="text-center pb-3">
+            <CardTitle className="font-serif text-xl sm:text-2xl flex items-center justify-center gap-2">
+              <User className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               Choose Your Character
             </CardTitle>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Select a pre-made character template or create your own woodland adventurer
             </p>
           </CardHeader>
         </Card>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
           <Button
             variant="outline"
             onClick={generateRandomTemplate}
-            className="h-16"
+            className="h-12 sm:h-14 text-sm"
             data-testid="button-random-template"
           >
-            <Shuffle className="w-5 h-5 mr-2" />
-            <div>
+            <Shuffle className="w-4 h-4 mr-2 shrink-0" />
+            <div className="text-left">
               <div className="font-medium">Random Character</div>
-              <div className="text-xs text-muted-foreground">Let fate decide</div>
+              <div className="text-xs text-muted-foreground hidden sm:block">Let fate decide</div>
             </div>
           </Button>
           
           <Button
             variant="outline"
             onClick={onCreateCustom}
-            className="h-16"
+            className="h-12 sm:h-14 text-sm"
             data-testid="button-custom-character"
           >
-            <User className="w-5 h-5 mr-2" />
-            <div>
+            <User className="w-4 h-4 mr-2 shrink-0" />
+            <div className="text-left">
               <div className="font-medium">Custom Character</div>
-              <div className="text-xs text-muted-foreground">Build from scratch</div>
+              <div className="text-xs text-muted-foreground hidden sm:block">Build from scratch</div>
             </div>
           </Button>
 
           <Button
             variant="outline"
             onClick={onBack}
-            className="h-16"
+            className="h-12 sm:h-14 text-sm"
             data-testid="button-template-back-menu"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            <div>
+            <ArrowLeft className="w-4 h-4 mr-2 shrink-0" />
+            <div className="text-left">
               <div className="font-medium">Back to Menu</div>
-              <div className="text-xs text-muted-foreground">Return to start</div>
+              <div className="text-xs text-muted-foreground hidden sm:block">Return to start</div>
             </div>
           </Button>
         </div>
 
         {/* Character Templates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {characterTemplates.map((template) => (
             <Card 
               key={template.id}
@@ -467,30 +457,30 @@ export default function CharacterTemplates({
               onClick={() => setSelectedTemplate(template)}
               data-testid={`template-${template.id}`}
             >
-              <CardHeader className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
+              <CardHeader className="text-center pb-2">
+                <div className="flex items-center justify-center gap-2 mb-1">
                   {template.icon}
-                  <CardTitle className="text-lg">{template.name}</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">{template.name}</CardTitle>
                 </div>
                 <p className="text-sm font-medium text-primary">{template.title}</p>
-                <p className="text-xs text-muted-foreground">{template.description}</p>
+                <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>
               </CardHeader>
               
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-center gap-2">
-                    <Badge variant="outline" className="text-xs">{template.race}</Badge>
-                    <Badge variant="outline" className="text-xs">{template.class}</Badge>
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  <div className="flex justify-center gap-1">
+                    <Badge variant="outline" className="text-xs px-2 py-1">{template.race}</Badge>
+                    <Badge variant="outline" className="text-xs px-2 py-1">{template.class}</Badge>
                   </div>
                   
                   <div className="flex flex-wrap justify-center gap-1">
                     {template.personality.slice(0, 2).map((trait) => (
-                      <Badge key={trait} variant="secondary" className="text-xs">
+                      <Badge key={trait} variant="secondary" className="text-xs px-1.5 py-0.5">
                         {trait}
                       </Badge>
                     ))}
                     {template.personality.length > 2 && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
                         +{template.personality.length - 2}
                       </Badge>
                     )}
