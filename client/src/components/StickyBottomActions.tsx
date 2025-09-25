@@ -36,12 +36,12 @@ export default function StickyBottomActions({
         style={{ paddingBottom: `max(0.75rem, env(safe-area-inset-bottom))` }}
       >
         {/* Primary action row */}
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           {showBack && (
             <Button
               variant="outline"
               onClick={onBack}
-              className="flex-1 min-h-[2.75rem] text-sm"
+              className="flex-1 min-h-[2.75rem] text-xs sm:text-sm px-2 sm:px-4"
               data-testid="button-back"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -53,7 +53,7 @@ export default function StickyBottomActions({
             <Button
               onClick={onContinue}
               disabled={continueDisabled}
-              className="flex-1 min-h-[2.75rem] text-sm bg-gradient-to-r from-amber-600 to-green-600 hover:from-amber-700 hover:to-green-700"
+              className="flex-1 min-h-[2.75rem] text-xs sm:text-sm px-2 sm:px-4 bg-gradient-to-r from-amber-600 to-green-600 hover:from-amber-700 hover:to-green-700 truncate"
               data-testid="button-continue"
             >
               {continueLabel}
@@ -72,7 +72,7 @@ export default function StickyBottomActions({
             <Button
               variant="ghost"
               onClick={onSkip}
-              className="min-h-[2.75rem] text-sm text-muted-foreground hover:text-foreground"
+              className="min-h-[2.75rem] text-xs sm:text-sm text-muted-foreground hover:text-foreground truncate"
               data-testid="button-skip"
             >
               {skipLabel}

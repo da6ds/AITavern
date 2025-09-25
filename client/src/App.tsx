@@ -497,8 +497,8 @@ function GameApp() {
       
       {/* Main Content */}
       <main className="px-3 sm:px-4 py-4 sm:py-6 pb-20 sm:pb-24 min-h-0">
+        <div id="page-top" />
         <div className="max-h-[calc(100vh-12rem)] overflow-y-auto" onScroll={() => {}}>
-          <div id="page-top" />
           {getPageContent()}
         </div>
       </main>

@@ -98,6 +98,12 @@ export default function NavigationTabs({
       pageTop.scrollIntoView({ behavior: 'smooth' });
     }
     
+    // Also scroll the scrollable container to top
+    const scrollContainer = document.querySelector('main .overflow-y-auto');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
     // Mark tab as visited to clear notifications
     markTabAsVisited(tabId);
     
