@@ -52,7 +52,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 mb-4">
+          <div className="inline-flex items-center gap-2 mb-6">
             <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-green-600 rounded-lg flex items-center justify-center">
               <Gamepad2 className="w-6 h-6 text-white" />
             </div>
@@ -60,25 +60,42 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
               Skunk Tales
             </h1>
           </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Embark on magical adventures with your AI-powered companion. 
-            Create characters, explore worlds, and experience cozy tabletop gaming reimagined for mobile.
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4 leading-tight">
+            Be the hero of your own story
+          </h2>
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-4 leading-relaxed">
+            Make a world. Step inside. Any genre, any system. Tap • Talk • Type.
           </p>
+          <div className="flex flex-wrap justify-center gap-2 text-sm">
+            <Badge variant="secondary" className="text-xs">Any Story</Badge>
+            <Badge variant="secondary" className="text-xs">AI GM</Badge>
+            <Badge variant="secondary" className="text-xs">Solo or Group</Badge>
+            <Badge variant="secondary" className="text-xs">Phone-first</Badge>
+          </div>
         </div>
 
         {/* Example Adventure Preview */}
         <div className="text-center mb-12">
           <div className="max-w-2xl mx-auto">
-            <div className="bg-gradient-to-r from-amber-100 to-green-100 dark:from-amber-900/30 dark:to-green-900/30 rounded-lg p-8 border border-amber-200 dark:border-amber-800">
+            <div className="bg-gradient-to-r from-amber-100 to-green-100 dark:from-amber-900/30 dark:to-green-900/30 rounded-lg p-6 sm:p-8 border border-amber-200 dark:border-amber-800">
               <div className="text-left space-y-4">
                 <p className="text-sm text-muted-foreground">Example Adventure in Progress:</p>
-                <blockquote className="text-base italic">
-                  "The ancient forest whispers secrets as your character, Thara the Druid, discovers a glowing crystal hidden beneath the roots of an enormous oak tree. What do you do next?"
+                <blockquote className="text-base sm:text-lg italic leading-relaxed">
+                  "At dusk, a doorway appears where the wall should be. What do you do?"
                 </blockquote>
-                <div className="flex gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-xs">🏃 Investigate the crystal</Badge>
-                  <Badge variant="outline" className="text-xs">🛡️ Proceed with caution</Badge>
-                  <Badge variant="outline" className="text-xs">💭 Ask your companion for advice</Badge>
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2 sm:flex-wrap">
+                  <Button variant="outline" size="sm" className="text-xs h-auto py-2 px-3 min-h-[2.5rem]">
+                    Open it
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs h-auto py-2 px-3 min-h-[2.5rem]">
+                    Examine first
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs h-auto py-2 px-3 min-h-[2.5rem]">
+                    Ask a companion
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs h-auto py-2 px-3 min-h-[2.5rem]">
+                    Try something else
+                  </Button>
                 </div>
               </div>
             </div>
@@ -89,7 +106,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
         <div className="text-center">
           <Card className="max-w-lg mx-auto">
             <CardHeader>
-              <CardTitle className="text-2xl">Ready to Begin Your Adventure?</CardTitle>
+              <CardTitle className="text-2xl">Start an Adventure</CardTitle>
               <CardDescription className="text-base">
                 Join thousands of adventurers in magical worlds powered by AI
               </CardDescription>
@@ -115,7 +132,7 @@ export default function LandingPage({ onLogin }: LandingPageProps) {
                 data-testid="button-start-adventure"
                 disabled={isStartingDemo}
               >
-                {isStartingDemo ? "Starting Demo..." : "Ready to Begin Your Adventure"}
+                {isStartingDemo ? "Starting Demo..." : "Start an Adventure"}
               </Button>
               <div className="text-sm text-muted-foreground">
                 {demoMode ? (
