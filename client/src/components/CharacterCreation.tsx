@@ -18,7 +18,7 @@ import {
 import CharacterQuestionnaire, { type CharacterQuestionnaireResults } from "./CharacterQuestionnaire";
 import AbilityScoreRoller, { type AbilityScores } from "./AbilityScoreRoller";
 import CharacterTemplates from "./CharacterTemplates";
-import StickyBottomActions from "./StickyBottomActions";
+import MobileStepLayout from "./MobileStepLayout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface CharacterCreationProps {
@@ -198,87 +198,83 @@ export default function CharacterCreation({
   );
 
   const renderBasicsStep = () => (
-    <>
-      <div className="pb-32 p-4"> {/* Add padding for sticky bottom nav */}
-        {renderStepIndicator()}
-        <Card className="max-w-lg mx-auto">
-          <CardHeader className="text-center pb-3">
-            <CardTitle className="font-serif text-lg sm:text-xl flex items-center justify-center gap-2">
-              <User className="w-5 h-5 text-primary" />
-              Create Your Character
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Tell us about your adventurer's identity and background
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-        <div className="space-y-1">
-          <Label htmlFor="character-name" className="text-sm">Character Name</Label>
-          <Input
-            id="character-name"
-            placeholder="Enter your character's name..."
-            value={character.name}
-            onChange={(e) => setCharacter(prev => ({ ...prev, name: e.target.value }))}
-            data-testid="input-character-name"
-            className="text-sm"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="character-appearance" className="text-sm">Physical Appearance</Label>
-          <Textarea
-            id="character-appearance"
-            placeholder="Describe what your character looks like. Be as detailed as you'd like - this will help generate your portrait!"
-            value={character.appearance}
-            onChange={(e) => setCharacter(prev => ({ ...prev, appearance: e.target.value }))}
-            rows={2}
-            data-testid="textarea-character-appearance"
-            className="text-sm resize-none"
-          />
-          <p className="text-xs text-muted-foreground">
-            Example: "A tall elf with silver hair and piercing blue eyes, wearing a dark hooded cloak"
+    <MobileStepLayout
+      onBack={onBack}
+      onSkip={handleSkipBasics}
+      onContinue={handleBasicsSubmit}
+      continueDisabled={!character.name.trim() || !character.appearance.trim() || !character.backstory.trim()}
+      backLabel="Back to Menu"
+      skipLabel="Use Defaults"
+      continueLabel="Continue"
+      showSkip={true}
+    >
+      {renderStepIndicator()}
+      <Card className="max-w-lg mx-auto">
+        <CardHeader className="text-center pb-3">
+          <CardTitle className="font-serif text-lg sm:text-xl flex items-center justify-center gap-2">
+            <User className="w-5 h-5 text-primary" />
+            Create Your Character
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Tell us about your adventurer's identity and background
           </p>
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="character-backstory" className="text-sm">Character Backstory</Label>
-          <Textarea
-            id="character-backstory"
-            placeholder="What's your character's history? Where do they come from? What drives them to adventure?"
-            value={character.backstory}
-            onChange={(e) => setCharacter(prev => ({ ...prev, backstory: e.target.value }))}
-            rows={2}
-            data-testid="textarea-character-backstory"
-            className="text-sm resize-none"
-          />
-        </div>
-
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                onClick={generateRandomCharacter}
-                className="w-full text-sm"
-                data-testid="button-random-character"
-              >
-                <Dice6 className="w-4 h-4 mr-2" />
-                Quick Start - Generate Random Character
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        </CardHeader>
+        <CardContent className="space-y-4">
+      <div className="space-y-1">
+        <Label htmlFor="character-name" className="text-sm">Character Name</Label>
+        <Input
+          id="character-name"
+          placeholder="Enter your character's name..."
+          value={character.name}
+          onChange={(e) => setCharacter(prev => ({ ...prev, name: e.target.value }))}
+          data-testid="input-character-name"
+          className="text-sm"
+        />
       </div>
-      
-      <StickyBottomActions
-        onBack={onBack}
-        onSkip={handleSkipBasics}
-        onContinue={handleBasicsSubmit}
-        continueDisabled={!character.name.trim() || !character.appearance.trim() || !character.backstory.trim()}
-        backLabel="Back to Menu"
-        skipLabel="Use Defaults"
-        continueLabel="Continue"
-        data-testid="character-basics-actions"
-      />
-    </>
+
+      <div className="space-y-1">
+        <Label htmlFor="character-appearance" className="text-sm">Physical Appearance</Label>
+        <Textarea
+          id="character-appearance"
+          placeholder="Describe what your character looks like. Be as detailed as you'd like - this will help generate your portrait!"
+          value={character.appearance}
+          onChange={(e) => setCharacter(prev => ({ ...prev, appearance: e.target.value }))}
+          rows={2}
+          data-testid="textarea-character-appearance"
+          className="text-sm resize-none"
+        />
+        <p className="text-xs text-muted-foreground">
+          Example: "A tall elf with silver hair and piercing blue eyes, wearing a dark hooded cloak"
+        </p>
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="character-backstory" className="text-sm">Character Backstory</Label>
+        <Textarea
+          id="character-backstory"
+          placeholder="What's your character's history? Where do they come from? What drives them to adventure?"
+          value={character.backstory}
+          onChange={(e) => setCharacter(prev => ({ ...prev, backstory: e.target.value }))}
+          rows={2}
+          data-testid="textarea-character-backstory"
+          className="text-sm resize-none"
+        />
+      </div>
+
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              onClick={generateRandomCharacter}
+              className="w-full text-sm"
+              data-testid="button-random-character"
+            >
+              <Dice6 className="w-4 h-4 mr-2" />
+              Quick Start - Generate Random Character
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </MobileStepLayout>
   );
 
   const handleSkipPortrait = () => {
@@ -291,120 +287,116 @@ export default function CharacterCreation({
   };
 
   const renderPortraitStep = () => (
-    <>
-      <div className="pb-32 p-4"> {/* Add padding for sticky bottom nav */}
-        {renderStepIndicator()}
-        <Card className="max-w-lg mx-auto">
-      <CardHeader className="text-center pb-3">
-        <CardTitle className="font-serif text-lg sm:text-xl flex items-center justify-center gap-2">
-          <Wand2 className="w-5 h-5 text-primary" />
-          Generate Your Portrait
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Create an AI-generated image of your character
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="text-center space-y-3">
-          {character.portraitUrl ? (
-            <div className="space-y-3">
-              <img
-                src={character.portraitUrl}
-                alt="Character Portrait"
-                className="w-48 h-48 sm:w-56 sm:h-56 mx-auto rounded-lg border-2 border-primary/20 object-cover"
-                data-testid="character-portrait"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  onClick={generatePortrait}
-                  disabled={isGeneratingPortrait}
-                  data-testid="button-regenerate-portrait"
-                  className="text-xs"
-                >
-                  <RefreshCw className={`w-3 h-3 mr-1 ${isGeneratingPortrait ? 'animate-spin' : ''}`} />
-                  Generate New
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={triggerFileUpload}
-                  data-testid="button-upload-portrait"
-                  className="text-xs"
-                >
-                  <Upload className="w-3 h-3 mr-1" />
-                  Upload Your Own
-                </Button>
+    <MobileStepLayout
+      onBack={() => setCurrentStep(character.race ? "templates" : "basics")}
+      onSkip={handleSkipPortrait}
+      onContinue={() => setCurrentStep("questionnaire")}
+      backLabel="Back"
+      skipLabel="Use Default"
+      continueLabel="Continue"
+      showSkip={true}
+    >
+      {renderStepIndicator()}
+      <Card className="max-w-lg mx-auto">
+        <CardHeader className="text-center pb-3">
+          <CardTitle className="font-serif text-lg sm:text-xl flex items-center justify-center gap-2">
+            <Wand2 className="w-5 h-5 text-primary" />
+            Generate Your Portrait
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Create an AI-generated image of your character
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-center space-y-3">
+            {character.portraitUrl ? (
+              <div className="space-y-3">
+                <img
+                  src={character.portraitUrl}
+                  alt="Character Portrait"
+                  className="w-48 h-48 sm:w-56 sm:h-56 mx-auto rounded-lg border-2 border-primary/20 object-cover"
+                  data-testid="character-portrait"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={generatePortrait}
+                    disabled={isGeneratingPortrait}
+                    data-testid="button-regenerate-portrait"
+                    className="text-xs"
+                  >
+                    <RefreshCw className={`w-3 h-3 mr-1 ${isGeneratingPortrait ? 'animate-spin' : ''}`} />
+                    Generate New
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={triggerFileUpload}
+                    data-testid="button-upload-portrait"
+                    className="text-xs"
+                  >
+                    <Upload className="w-3 h-3 mr-1" />
+                    Upload Your Own
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="w-48 h-48 sm:w-56 sm:h-56 mx-auto border-2 border-dashed border-muted rounded-lg flex items-center justify-center bg-muted/10">
-                {isGeneratingPortrait ? (
-                  <div className="text-center">
-                    <RefreshCw className="w-6 h-6 mx-auto animate-spin text-primary mb-2" />
-                    <p className="text-xs text-muted-foreground">Generating portrait...</p>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <Image className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-xs text-muted-foreground">Character Portrait</p>
-                  </div>
-                )}
+            ) : (
+              <div className="space-y-3">
+                <div className="w-48 h-48 sm:w-56 sm:h-56 mx-auto border-2 border-dashed border-muted rounded-lg flex items-center justify-center bg-muted/10">
+                  {isGeneratingPortrait ? (
+                    <div className="text-center">
+                      <RefreshCw className="w-6 h-6 mx-auto animate-spin text-primary mb-2" />
+                      <p className="text-xs text-muted-foreground">Generating portrait...</p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <Image className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground">Character Portrait</p>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Button
+                    onClick={generatePortrait}
+                    disabled={isGeneratingPortrait}
+                    className="w-full text-sm"
+                    data-testid="button-generate-portrait"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isGeneratingPortrait ? 'animate-spin' : ''}`} />
+                    Generate New Portrait
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={triggerFileUpload}
+                    className="w-full text-sm"
+                    data-testid="button-upload-portrait"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Your Image
+                  </Button>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Button
-                  onClick={generatePortrait}
-                  disabled={isGeneratingPortrait}
-                  className="w-full text-sm"
-                  data-testid="button-generate-portrait"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isGeneratingPortrait ? 'animate-spin' : ''}`} />
-                  Generate New Portrait
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={triggerFileUpload}
-                  className="w-full text-sm"
-                  data-testid="button-upload-portrait"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Your Image
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <div className="bg-muted/20 p-4 rounded-lg">
-          <h4 className="font-medium mb-2">Appearance Description:</h4>
-          <p className="text-sm text-muted-foreground">"{character.appearance}"</p>
-        </div>
+          <div className="bg-muted/20 p-4 rounded-lg">
+            <h4 className="font-medium mb-2">Appearance Description:</h4>
+            <p className="text-sm text-muted-foreground">"{character.appearance}"</p>
+          </div>
 
-        {/* Hidden file input for portrait upload */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileUpload}
-          className="hidden"
-          data-testid="file-input-portrait"
-        />
+          {/* Hidden file input for portrait upload */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+            data-testid="file-input-portrait"
+          />
 
-      </CardContent>
-    </Card>
-  </div>
-      
-  <StickyBottomActions
-    onBack={() => setCurrentStep(character.race ? "templates" : "basics")}
-    onSkip={handleSkipPortrait}
-    onContinue={() => setCurrentStep("questionnaire")}
-    backLabel="Back"
-    skipLabel="Use Default"
-    continueLabel="Continue"
-    data-testid="character-portrait-actions"
-  />
-</>
-);
+        </CardContent>
+      </Card>
+    </MobileStepLayout>
+  );
 
   const handleTemplateSelect = (template: any) => {
     // Convert template to character data format and skip to portrait step

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import StickyBottomActions from "./StickyBottomActions";
+import MobileStepLayout from "./MobileStepLayout";
 import { 
   Scroll,
   Mountain,
@@ -227,9 +227,18 @@ export default function AdventureTemplates({
   };
 
   return (
-    <>
-      <div className={`min-h-screen bg-background text-foreground p-4 pb-32 ${className}`}>
-        <div className="max-w-6xl mx-auto">
+    <MobileStepLayout
+      onBack={onBack}
+      onSkip={handleSkipWithDefault}
+      onContinue={handleConfirmSelection}
+      continueDisabled={!selectedTemplate}
+      backLabel="Back to Menu"
+      skipLabel="Use Default Adventure"
+      continueLabel="Start Adventure"
+      showSkip={true}
+      className={className}
+    >
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <Card className="mb-6">
           <CardHeader className="text-center">
@@ -361,18 +370,6 @@ export default function AdventureTemplates({
         )}
 
         </div>
-      </div>
-      
-      <StickyBottomActions
-        onBack={onBack}
-        onSkip={handleSkipWithDefault}
-        onContinue={handleConfirmSelection}
-        continueDisabled={!selectedTemplate}
-        backLabel="Back to Menu"
-        skipLabel="Use Default Adventure"
-        continueLabel="Start Adventure"
-        data-testid="adventure-templates-actions"
-      />
-    </>
+    </MobileStepLayout>
   );
 }

@@ -15,7 +15,7 @@ import {
   Shuffle,
   User
 } from "lucide-react";
-import StickyBottomActions from "./StickyBottomActions";
+import MobileStepLayout from "./MobileStepLayout";
 
 interface CharacterTemplate {
   id: string;
@@ -302,16 +302,22 @@ export default function CharacterTemplates({
 
   if (selectedTemplate) {
     return (
-      <>
-        <div className={`min-h-screen bg-background text-foreground p-4 pb-32 ${className}`}>
-          <div className="max-w-lg mx-auto">
-            <Card className={getThemeColors(selectedTemplate.theme)}>
-              <CardHeader className="text-center pb-3">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  {selectedTemplate.icon}
-                  <CardTitle className="font-serif text-xl sm:text-2xl">
-                    {selectedTemplate.name}
-                  </CardTitle>
+      <MobileStepLayout
+        onBack={() => setSelectedTemplate(null)}
+        onContinue={() => onSelectTemplate(selectedTemplate)}
+        backLabel="Back"
+        continueLabel="Use This Character"
+        showSkip={false}
+        className={className}
+      >
+        <div className="max-w-lg mx-auto">
+          <Card className={getThemeColors(selectedTemplate.theme)}>
+            <CardHeader className="text-center pb-3">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                {selectedTemplate.icon}
+                <CardTitle className="font-serif text-xl sm:text-2xl">
+                  {selectedTemplate.name}
+                </CardTitle>
                 </div>
                 <p className="text-base font-medium text-primary">{selectedTemplate.title}</p>
                 <p className="text-sm text-muted-foreground">{selectedTemplate.description}</p>
@@ -376,17 +382,7 @@ export default function CharacterTemplates({
               </CardContent>
             </Card>
           </div>
-        </div>
-        
-        <StickyBottomActions
-          onBack={() => setSelectedTemplate(null)}
-          onContinue={() => onSelectTemplate(selectedTemplate)}
-          backLabel="Back"
-          continueLabel="Use This Character"
-          showSkip={false}
-          data-testid="template-detail-actions"
-        />
-      </>
+        </MobileStepLayout>
     );
   }
 
