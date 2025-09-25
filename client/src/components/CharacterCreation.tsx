@@ -155,9 +155,52 @@ export default function CharacterCreation({
     setCurrentStep("portrait");
   };
 
+  const getStepNumber = () => {
+    switch (currentStep) {
+      case "basics": return 1;
+      case "portrait": return 2;
+      case "questionnaire": return 3;
+      case "abilities": return 4;
+      default: return 1;
+    }
+  };
+
+  const renderStepIndicator = () => (
+    <div className="max-w-lg mx-auto mb-6">
+      <div className="flex items-center justify-center space-x-2 mb-3">
+        {[1, 2, 3, 4].map((step) => (
+          <div key={step} className="flex items-center">
+            <div className={`
+              w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium
+              ${getStepNumber() === step ? 'bg-primary text-primary-foreground' : 
+                getStepNumber() > step 
+                  ? 'bg-primary/20 text-primary' 
+                  : 'bg-muted text-muted-foreground'}
+            `}>
+              {step}
+            </div>
+            {step < 4 && (
+              <div className={`w-8 h-0.5 mx-1 ${
+                getStepNumber() > step 
+                  ? 'bg-primary' 
+                  : 'bg-muted'
+              }`} />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="text-center">
+        <Badge variant="secondary" className="text-xs">
+          Step {getStepNumber()} of 4
+        </Badge>
+      </div>
+    </div>
+  );
+
   const renderBasicsStep = () => (
     <>
-      <div className="pb-32"> {/* Add padding for sticky bottom nav */}
+      <div className="pb-32 p-4"> {/* Add padding for sticky bottom nav */}
+        {renderStepIndicator()}
         <Card className="max-w-lg mx-auto">
           <CardHeader className="text-center pb-3">
             <CardTitle className="font-serif text-lg sm:text-xl flex items-center justify-center gap-2">
@@ -249,7 +292,8 @@ export default function CharacterCreation({
 
   const renderPortraitStep = () => (
     <>
-      <div className="pb-32"> {/* Add padding for sticky bottom nav */}
+      <div className="pb-32 p-4"> {/* Add padding for sticky bottom nav */}
+        {renderStepIndicator()}
         <Card className="max-w-lg mx-auto">
       <CardHeader className="text-center pb-3">
         <CardTitle className="font-serif text-lg sm:text-xl flex items-center justify-center gap-2">

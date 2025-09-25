@@ -149,6 +149,13 @@ export default function CharacterQuestionnaire({
     }
   };
 
+  const goToNextStep = () => {
+    const currentIndex = stepOrder.indexOf(currentStep);
+    if (currentIndex < stepOrder.length - 1) {
+      setCurrentStep(stepOrder[currentIndex + 1]);
+    }
+  };
+
   const generateResults = (): CharacterQuestionnaireResults => {
     // Simple logic to suggest race and class based on answers
     let suggestedRace = "Human";
@@ -368,8 +375,8 @@ export default function CharacterQuestionnaire({
       <StickyBottomActions
         onBack={goBack}
         onSkip={handleSkipWithDefaults}
-        onContinue={currentStep === "summary" ? () => onComplete(generateResults()) : goToNext}
-        backLabel={currentStep === "size" ? "Back to Character" : "Back"}
+        onContinue={currentStep === "summary" ? () => onComplete(generateResults()) : goToNextStep}
+        backLabel="Back"
         skipLabel="Use Defaults"
         continueLabel={currentStep === "summary" ? "Continue with These" : "Next"}
         continueDisabled={false}
