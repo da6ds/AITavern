@@ -14,89 +14,90 @@
   --elevate-1: rgba(108, 122, 137, .04);
   --elevate-2: rgba(108, 122, 137, .10);
 
-  /* Story Mode Pastel Colors */
-  /* Cream Background: #FFF9F0 - RGB(255, 249, 240) */
-  --background: 37 100% 97%;
+  /* Story Mode Warm Pastel Colors - Cozy Adventure Theme */
+  /* Warm Cream Background: #FFF8F0 - RGB(255, 248, 240) */
+  --background: 30 100% 97%;
 
-  /* Soft Indigo: #6C7A89 - RGB(108, 122, 137) - Primary text */
-  --foreground: 210 12% 48%;
+  /* Warm Charcoal: #5C6B73 - RGB(92, 107, 115) - Primary text */
+  --foreground: 201 11% 41%;
 
-  --border: 210 15% 88%;
+  --border: 30 20% 88%;
 
-  /* Cards are pure white on cream background */
-  --card: 0 0% 100%;
+  /* Cards are soft white on cream background */
+  --card: 40 40% 99%;
 
-  --card-foreground: 210 12% 48%;
+  --card-foreground: 201 11% 41%;
 
-  --card-border: 210 15% 90%;
+  --card-border: 30 20% 90%;
 
-  --sidebar: 37 100% 95%;
+  --sidebar: 30 100% 95%;
 
-  --sidebar-foreground: 210 12% 48%;
+  --sidebar-foreground: 201 11% 41%;
 
-  --sidebar-border: 210 15% 88%;
+  --sidebar-border: 30 20% 88%;
 
-  /* Peachy Pink: #FFB6B9 - RGB(255, 182, 185) - Primary CTAs */
-  --sidebar-primary: 357 100% 86%;
+  /* Soft Teal: #7FBFB0 - RGB(127, 191, 176) - Primary CTAs */
+  --sidebar-primary: 166 34% 62%;
 
-  --sidebar-primary-foreground: 210 12% 48%;
+  --sidebar-primary-foreground: 166 50% 15%;
 
-  /* Lavender: #C9B6E4 - RGB(201, 182, 228) - Secondary/Info */
-  --sidebar-accent: 268 47% 80%;
+  /* Warm Peach: #F4C2A7 - RGB(244, 194, 167) - Secondary/Info */
+  --sidebar-accent: 21 74% 81%;
 
-  --sidebar-accent-foreground: 268 47% 30%;
+  --sidebar-accent-foreground: 21 60% 25%;
 
-  --sidebar-ring: 357 100% 86%;
+  --sidebar-ring: 166 34% 62%;
 
-  --popover: 0 0% 100%;
+  --popover: 40 40% 99%;
 
-  --popover-foreground: 210 12% 48%;
+  --popover-foreground: 201 11% 41%;
 
-  --popover-border: 210 15% 90%;
+  --popover-border: 30 20% 90%;
 
-  /* Peachy Pink as Primary */
-  --primary: 357 100% 86%;
+  /* Soft Teal as Primary - inviting and adventurous */
+  --primary: 166 34% 62%;
 
-  --primary-foreground: 210 12% 48%;
+  --primary-foreground: 166 50% 15%;
 
-  /* Lavender as Secondary */
-  --secondary: 268 47% 80%;
+  /* Warm Peach as Secondary - friendly and approachable */
+  --secondary: 21 74% 81%;
 
-  --secondary-foreground: 268 47% 30%;
+  --secondary-foreground: 21 60% 25%;
 
-  --muted: 37 100% 95%;
+  --muted: 30 30% 94%;
 
-  --muted-foreground: 210 12% 55%;
+  --muted-foreground: 201 11% 50%;
 
-  /* Mint Green: #A8E6CF - RGB(168, 230, 207) - Success/Positive */
-  --accent: 153 56% 78%;
+  /* Sage Green: #A8C2A0 - RGB(168, 194, 160) - Success/Positive */
+  --accent: 106 21% 69%;
 
-  --accent-foreground: 153 56% 28%;
+  --accent-foreground: 106 30% 20%;
 
-  --destructive: 0 75% 45%;
+  /* Terracotta: #C67B5C - RGB(198, 123, 92) - Destructive but not harsh */
+  --destructive: 18 47% 57%;
 
-  --destructive-foreground: 0 15% 95%;
+  --destructive-foreground: 18 15% 95%;
 
-  --input: 210 15% 88%;
-  --ring: 357 100% 86%; /* Peachy pink for focus rings */
-  --chart-1: 357 100% 86%; /* Peachy */
-  --chart-2: 35 80% 45%;
-  --chart-3: 285 60% 45%;
-  --chart-4: 160 65% 40%;
-  --chart-5: 15 80% 50%;
+  --input: 30 20% 88%;
+  --ring: 166 34% 62%; /* Soft teal for focus rings */
+  --chart-1: 166 34% 62%; /* Teal */
+  --chart-2: 21 74% 81%; /* Peach */
+  --chart-3: 106 21% 69%; /* Sage */
+  --chart-4: 42 78% 70%; /* Honey */
+  --chart-5: 18 47% 57%; /* Terracotta */
 
-  /* Item Rarity Colors */
-  --rarity-common: 220 15% 40%;
-  --rarity-uncommon: 160 65% 40%;
-  --rarity-rare: 220 70% 55%;
-  --rarity-epic: 285 60% 55%;
-  --rarity-legendary: 45 90% 55%;
+  /* Item Rarity Colors - Earthy tones */
+  --rarity-common: 30 10% 50%; /* Warm grey */
+  --rarity-uncommon: 106 21% 55%; /* Sage green */
+  --rarity-rare: 200 40% 60%; /* Sky blue */
+  --rarity-epic: 270 30% 60%; /* Soft purple */
+  --rarity-legendary: 42 70% 60%; /* Warm gold */
 
   /* Status Colors */
-  --success: 160 65% 40%;
-  --success-foreground: 160 15% 95%;
-  --warning: 45 90% 55%;
-  --warning-foreground: 45 15% 15%;
+  --success: 106 30% 50%; /* Sage green */
+  --success-foreground: 106 15% 95%;
+  --warning: 42 78% 60%; /* Warm amber */
+  --warning-foreground: 42 15% 15%;
 
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --font-serif: Cinzel, ui-serif, Georgia, serif;
@@ -154,80 +155,87 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 220 25% 8%;
+  /* Warm dark browns for cozy night feel */
+  --background: 30 15% 12%;
 
-  --foreground: 220 15% 95%;
+  --foreground: 30 10% 90%;
 
-  --border: 220 25% 18%;
+  --border: 30 15% 22%;
 
-  --card: 220 25% 12%;
+  --card: 30 15% 16%;
 
-  --card-foreground: 220 15% 90%;
+  --card-foreground: 30 10% 85%;
 
-  --card-border: 220 25% 20%;
+  --card-border: 30 15% 24%;
 
-  --sidebar: 220 25% 6%;
+  --sidebar: 30 15% 10%;
 
-  --sidebar-foreground: 220 15% 88%;
+  --sidebar-foreground: 30 10% 88%;
 
-  --sidebar-border: 220 25% 15%;
+  --sidebar-border: 30 15% 20%;
 
-  --sidebar-primary: 220 70% 55%;
+  /* Soft Teal for dark mode */
+  --sidebar-primary: 166 34% 55%;
 
-  --sidebar-primary-foreground: 220 15% 95%;
+  --sidebar-primary-foreground: 166 10% 95%;
 
-  --sidebar-accent: 285 60% 20%;
+  /* Warm Peach for dark mode */
+  --sidebar-accent: 21 60% 65%;
 
-  --sidebar-accent-foreground: 285 60% 85%;
+  --sidebar-accent-foreground: 21 60% 15%;
 
-  --sidebar-ring: 220 70% 55%;
+  --sidebar-ring: 166 34% 55%;
 
-  --popover: 220 25% 15%;
+  --popover: 30 15% 18%;
 
-  --popover-foreground: 220 15% 85%;
+  --popover-foreground: 30 10% 85%;
 
-  --popover-border: 220 25% 25%;
+  --popover-border: 30 15% 26%;
 
-  --primary: 220 70% 55%;
+  /* Soft Teal as primary */
+  --primary: 166 34% 55%;
 
-  --primary-foreground: 220 15% 95%;
+  --primary-foreground: 166 10% 95%;
 
-  --secondary: 220 25% 22%;
+  /* Warm Peach as secondary */
+  --secondary: 21 60% 65%;
 
-  --secondary-foreground: 220 15% 85%;
+  --secondary-foreground: 21 60% 15%;
 
-  --muted: 220 25% 10%;
+  --muted: 30 15% 14%;
 
-  --muted-foreground: 220 15% 75%;
+  --muted-foreground: 30 10% 70%;
 
-  --accent: 285 65% 65%;
+  /* Sage Green accent */
+  --accent: 106 21% 60%;
 
-  --accent-foreground: 285 65% 25%;
+  --accent-foreground: 106 30% 15%;
 
-  --destructive: 0 75% 25%;
+  /* Terracotta destructive */
+  --destructive: 18 47% 50%;
 
-  --destructive-foreground: 0 15% 95%;
+  --destructive-foreground: 18 15% 95%;
 
-  --input: 220 25% 35%;
-  --ring: 220 70% 55%;
-  --chart-1: 220 85% 60%;
-  --chart-2: 35 70% 65%;
-  --chart-3: 285 60% 70%;
-  --chart-4: 160 65% 65%;
-  --chart-5: 15 80% 70%;
+  --input: 30 15% 30%;
+  --ring: 166 34% 55%;
+  --chart-1: 166 34% 60%;
+  --chart-2: 21 74% 70%;
+  --chart-3: 106 21% 65%;
+  --chart-4: 42 78% 65%;
+  --chart-5: 18 47% 60%;
 
-  /* Item Rarity Colors (Dark Mode) */
-  --rarity-common: 220 15% 65%;
-  --rarity-uncommon: 160 65% 65%;
-  --rarity-rare: 220 70% 70%;
-  --rarity-epic: 285 60% 70%;
-  --rarity-legendary: 45 90% 65%;
+  /* Item Rarity Colors (Dark Mode) - Warm earthy tones */
+  --rarity-common: 30 10% 60%;
+  --rarity-uncommon: 106 21% 60%;
+  --rarity-rare: 200 40% 65%;
+  --rarity-epic: 270 30% 65%;
+  --rarity-legendary: 42 70% 65%;
 
   /* Status Colors (Dark Mode) */
-  --success: 160 65% 65%;
-  --success-foreground: 160 15% 15%;
-  --warning: 45 90% 65%;
-  --warning-foreground: 45 15% 15%;
+  --success: 106 30% 55%;
+  --success-foreground: 106 15% 15%;
+  --warning: 42 78% 65%;
+  --warning-foreground: 42 15% 15%;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.25);
   --shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.25);
