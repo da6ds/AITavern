@@ -18,6 +18,8 @@ import {
   type Campaign
 } from "@shared/schema";
 import { z } from "zod";
+import { aiLimiter, generalLimiter, strictLimiter } from "./rateLimit";
+import { spendTracker } from "./spendTracker";
 import { aiService } from "./aiService";
 
 // Validation schemas for updates
@@ -186,7 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     name: z.string().min(1).max(100)
   });
   
-  app.post("/api/character/generate-portrait", async (req, res) => {
+  app.post("/api/character/generate-portrait", strictLimiter, async (req, res) => {
     try {
       const result = portraitGenerationSchema.safeParse(req.body);
       if (!result.success) {
@@ -249,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Combat action endpoint
-  app.post("/api/combat/action", async (req, res) => {
+  app.post("/api/combat/action", aiLimiter, async (req, res) => {
     try {
       const { action, targetId, spellId, itemId } = req.body;
       
@@ -301,6 +303,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate AI response for combat action
+
+      // Check daily spend limit
+      const spendCheck = spendTracker.canMakeRequest();
+      if (!spendCheck.allowed) {
+        return res.status(429).json({ error: spendCheck.reason });
+      }
+
+      // Track successful AI request
+      spendTracker.trackRequest();
       const aiResponse = await aiService.generateResponse(actionMessage);
 
       // Store messages
@@ -679,16 +690,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Conversation endpoints
-  app.post("/api/ai/chat", async (req, res) => {
+  app.post("/api/ai/chat", aiLimiter, async (req, res) => {
     try {
       const { message } = req.body;
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: "Message is required" });
       }
 
+      // Check daily spend limit
+      const spendCheck = spendTracker.canMakeRequest();
+      if (!spendCheck.allowed) {
+        return res.status(429).json({ error: spendCheck.reason });
+      }
+
       // Generate AI response
       const aiResponse = await aiService.generateResponse(message);
 
+
+      // Track successful AI request
+      spendTracker.trackRequest();
       // Store the player message
       await storage.createMessage({
         content: message,
@@ -807,7 +827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quick action endpoint for predefined actions
-  app.post("/api/ai/quick-action", async (req, res) => {
+  app.post("/api/ai/quick-action", aiLimiter, async (req, res) => {
     try {
       const { action } = req.body;
       if (!action || typeof action !== 'string') {
@@ -838,6 +858,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           actionMessage = `I perform the ${action} action.`;
       }
 
+
+      // Check daily spend limit
+      const spendCheck = spendTracker.canMakeRequest();
+      if (!spendCheck.allowed) {
+        return res.status(429).json({ error: spendCheck.reason });
+      }
+
+      // Track successful AI request
+      spendTracker.trackRequest();
       // Process the quick action as a regular chat message
       const aiResponse = await aiService.generateResponse(actionMessage);
 
