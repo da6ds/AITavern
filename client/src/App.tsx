@@ -212,15 +212,17 @@ function GameApp() {
       // Reset the game state on the backend
       await apiRequest('POST', '/api/adventure/reset', {});
 
-      // Invalidate all queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['/api/game-state'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/character'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/items'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/enemies'] });
+      // Invalidate and refetch all queries to refresh the data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['/api/game-state'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/quests'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/messages'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/character'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/items'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/enemies'] })
+      ]);
 
-      // Return to start menu
+      // Return to start menu after data is refreshed
       setCurrentView("startMenu");
       analytics.trackEvent("adventure_ended");
     } catch (error) {

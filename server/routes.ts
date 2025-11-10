@@ -126,7 +126,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       description: z.string(),
       priority: z.enum(["high", "normal", "low"]),
       maxProgress: z.number()
-    })
+    }),
+    introMessage: z.string().optional() // Rich descriptive intro message
   });
 
   app.post("/api/adventure/reset", async (req, res) => {
@@ -177,9 +178,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Clear existing messages and add welcome message for the new adventure
       await storage.clearMessages();
-      
+
       const welcomeMessage = await storage.createMessage({
-        content: `Welcome to ${template.name}! You find yourself in ${template.initialScene}. ${template.initialQuest.description}`,
+        content: template.introMessage || `Welcome to ${template.name}! You find yourself in ${template.initialScene}. ${template.initialQuest.description}`,
         sender: 'dm',
         senderName: null,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
