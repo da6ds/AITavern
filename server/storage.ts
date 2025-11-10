@@ -179,7 +179,15 @@ export class MemStorage implements IStorage {
     if (this.messages.length === 0) {
       this.messages.push({
         id: randomUUID(),
-        content: "Greetings, brave adventurer! I am your Dungeon Master, here to guide you through epic tales and dangerous quests. You find yourself in the Starting Village, where your journey begins. What would you like to do?",
+        content: `The morning sun breaks through the mist as you arrive at Millhaven, a bustling village nestled between ancient forests and rolling hills. The scent of fresh bread wafts from the bakery, mingling with the metallic tang of the blacksmith's forge. Villagers bustle about their morning routines, but you notice worried glances cast toward the shadowy forest edge.
+
+You've heard rumors of strange disappearances and unusual creatures in these lands. The village elder, a weathered woman named Mirela, has been seeking brave adventurers to investigate. The local tavern, "The Sleeping Dragon," seems like a good place to gather information.
+
+**What do you do?**
+• Visit the village elder Mirela to learn about the troubles plaguing Millhaven
+• Head to The Sleeping Dragon tavern to gather rumors and information
+• Explore the village market to purchase supplies and equipment
+• Investigate the forest edge where the strange occurrences have been reported`,
         sender: "dm",
         senderName: null,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
