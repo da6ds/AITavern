@@ -151,10 +151,25 @@ function GameApp() {
       queryClient.invalidateQueries({ queryKey: ['/api/enemies'] });
     },
   });
-  
+
+  // Delete quest mutation
+  const deleteQuestMutation = useMutation({
+    mutationFn: async (questId: string) => {
+      const response = await apiRequest('DELETE', `/api/quests/${questId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
+    },
+  });
+
   // Event Handlers
   const handleSendMessage = (content: string) => {
     aiChatMutation.mutate(content);
+  };
+
+  const handleDeleteQuest = (questId: string) => {
+    deleteQuestMutation.mutate(questId);
   };
 
   const handleToggleListening = () => {
@@ -285,10 +300,11 @@ function GameApp() {
           );
         }
         return (
-          <QuestLog 
-            quests={quests} 
+          <QuestLog
+            quests={quests}
             onQuestClick={handleQuestAction}
-            className="pb-20" 
+            onQuestDelete={handleDeleteQuest}
+            className="pb-20"
           />
         );
       case 'inventory':

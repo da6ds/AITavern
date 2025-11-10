@@ -120,18 +120,18 @@ export default function NavigationTabs({
   
   return (
     <Card className={`fixed bottom-0 left-0 right-0 z-40 rounded-none border-x-0 border-b-0 ${className}`}>
-      <div className="grid grid-cols-4 p-2">
+      <div className="grid grid-cols-4 gap-0 p-2">
         {tabs.map((tab) => {
           const notification = getNotificationForTab(tab.id);
           const hasNotif = hasNotification(tab.id);
-          
+
           return (
-            <div key={tab.id} className="relative">
+            <div key={tab.id} className="relative flex justify-center">
               <Button
                 ref={tabRefs[tab.id]}
                 variant={activeTab === tab.id ? "default" : "ghost"}
                 onClick={() => handleTabClick(tab.id)}
-                className="relative h-16 flex flex-col items-center justify-center px-2 min-w-[44px] touch-manipulation"
+                className="relative h-16 w-full flex flex-col items-center justify-center px-2 min-w-[44px] touch-manipulation"
                 data-testid={`tab-${tab.id}`}
               >
                 <div className="relative">

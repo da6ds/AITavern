@@ -37,7 +37,8 @@ export interface IStorage {
   createQuest(quest: InsertQuest): Promise<Quest>;
   updateQuest(id: string, updates: Partial<Quest>): Promise<Quest | null>;
   deleteQuest(id: string): Promise<boolean>;
-  
+  clearQuests(): Promise<void>;
+
   // Inventory management
   getItems(): Promise<Item[]>;
   getItem(id: string): Promise<Item | undefined>;
@@ -325,6 +326,17 @@ You've traveled far to reach this place, drawn by rumors that have spread throug
   }
 
   async createQuest(quest: InsertQuest): Promise<Quest> {
+    // Check if a quest with the same title already exists (prevent duplicates)
+    const existingQuest = Array.from(this.quests.values()).find(
+      q => q.title === quest.title && q.status === 'active'
+    );
+
+    // If duplicate found, return the existing quest instead of creating a new one
+    if (existingQuest) {
+      console.log(`Prevented duplicate quest creation: "${quest.title}"`);
+      return existingQuest;
+    }
+
     const id = randomUUID();
     const newQuest: Quest = {
       id,
@@ -486,6 +498,10 @@ You've traveled far to reach this place, drawn by rumors that have spread throug
 
   async clearMessages(): Promise<void> {
     this.messages = [];
+  }
+
+  async clearQuests(): Promise<void> {
+    this.quests.clear();
   }
 
   async clearAllAdventureData(): Promise<void> {

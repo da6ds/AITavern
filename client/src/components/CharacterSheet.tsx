@@ -1,5 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Pencil, Check, X } from "lucide-react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import StatDisplay from "./StatDisplay";
 import HealthBar from "./HealthBar";
 import type { Character } from "@shared/schema";
@@ -10,12 +15,98 @@ interface CharacterSheetProps {
 }
 
 export default function CharacterSheet({ character, className = "" }: CharacterSheetProps) {
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(character.name);
+  const queryClient = useQueryClient();
+
+  const updateNameMutation = useMutation({
+    mutationFn: async (newName: string) => {
+      const response = await fetch(`/api/character/${character.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!response.ok) throw new Error('Failed to update name');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/character'] });
+      setIsEditingName(false);
+    },
+  });
+
+  const handleSaveName = () => {
+    const trimmedName = editedName.trim();
+    if (trimmedName && trimmedName !== character.name) {
+      updateNameMutation.mutate(trimmedName);
+    } else {
+      setIsEditingName(false);
+      setEditedName(character.name);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingName(false);
+    setEditedName(character.name);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveName();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
+
   return (
     <div className={`space-y-4 ${className}`} data-testid="character-sheet">
       {/* Character Header */}
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="font-serif text-2xl text-primary">{character.name}</CardTitle>
+          {isEditingName ? (
+            <div className="flex items-center justify-center gap-2">
+              <Input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="font-serif text-2xl text-primary text-center max-w-xs"
+                autoFocus
+                disabled={updateNameMutation.isPending}
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleSaveName}
+                disabled={updateNameMutation.isPending}
+                className="h-8 w-8 p-0"
+              >
+                <Check className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleCancelEdit}
+                disabled={updateNameMutation.isPending}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <CardTitle className="font-serif text-2xl text-primary">{character.name}</CardTitle>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsEditingName(true)}
+                className="h-8 w-8 p-0"
+                data-testid="edit-name-button"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
           <div className="flex justify-center gap-2 mt-2">
             <Badge variant="secondary" data-testid="character-class">{character.class}</Badge>
             <Badge variant="outline" data-testid="character-level">Level {character.level}</Badge>

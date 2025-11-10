@@ -9,10 +9,11 @@ import { ScrollText, CheckCircle, XCircle } from "lucide-react";
 interface QuestLogProps {
   quests: Quest[];
   onQuestClick?: (quest: Quest) => void;
+  onQuestDelete?: (questId: string) => void;
   className?: string;
 }
 
-export default function QuestLog({ quests, onQuestClick, className = "" }: QuestLogProps) {
+export default function QuestLog({ quests, onQuestClick, onQuestDelete, className = "" }: QuestLogProps) {
   const activeQuests = quests.filter(q => q.status === "active");
   const completedQuests = quests.filter(q => q.status === "completed");
   const failedQuests = quests.filter(q => q.status === "failed");
@@ -60,6 +61,7 @@ export default function QuestLog({ quests, onQuestClick, className = "" }: Quest
                       key={quest.id}
                       quest={quest}
                       onClick={() => onQuestClick?.(quest)}
+                      onDelete={onQuestDelete}
                     />
                   ))
                 )}
@@ -79,6 +81,7 @@ export default function QuestLog({ quests, onQuestClick, className = "" }: Quest
                       key={quest.id}
                       quest={quest}
                       onClick={() => onQuestClick?.(quest)}
+                      onDelete={onQuestDelete}
                     />
                   ))
                 )}
@@ -98,6 +101,7 @@ export default function QuestLog({ quests, onQuestClick, className = "" }: Quest
                       key={quest.id}
                       quest={quest}
                       onClick={() => onQuestClick?.(quest)}
+                      onDelete={onQuestDelete}
                     />
                   ))
                 )}

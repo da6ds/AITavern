@@ -182,6 +182,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         turnCount: 0
       });
 
+      // Clear existing quests and messages for fresh adventure start
+      await storage.clearQuests();
+      await storage.clearMessages();
+
       // Create the initial quest
       const quest = await storage.createQuest({
         title: template.initialQuest.title,
@@ -195,9 +199,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parentQuestId: null,
         chainId: null
       });
-
-      // Clear existing messages and add welcome message for the new adventure
-      await storage.clearMessages();
 
       const welcomeMessage = await storage.createMessage({
         content: template.introMessage || `Welcome to ${template.name}! You find yourself in ${template.initialScene}. ${template.initialQuest.description}`,
