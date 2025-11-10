@@ -7,26 +7,30 @@ export function initPostHog() {
     return;
   }
 
-  posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
-    api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com',
-    
-    // Disable in development
-    disabled: import.meta.env.MODE === 'development',
-    
-    // Capture pageviews automatically
-    capture_pageview: true,
-    
-    // Capture performance metrics
-    capture_pageleave: true,
-    
-    // Session recording
-    session_recording: {
-      maskAllInputs: false,
-      maskInputOptions: {
-        password: true,
+  try {
+    posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+      api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com',
+
+      // Disable in development
+      disabled: import.meta.env.MODE === 'development',
+
+      // Capture pageviews automatically
+      capture_pageview: true,
+
+      // Capture performance metrics
+      capture_pageleave: true,
+
+      // Session recording
+      session_recording: {
+        maskAllInputs: false,
+        maskInputOptions: {
+          password: true,
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("Failed to initialize PostHog:", error);
+  }
 }
 
 // Track custom events

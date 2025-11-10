@@ -7,32 +7,37 @@ export function initSentry() {
     return;
   }
 
-  Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN,
-    environment: import.meta.env.MODE,
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration({
-        maskAllText: false,
-        blockAllMedia: false,
-      }),
-    ],
-    
-    // Performance Monitoring
-    tracesSampleRate: 0.1, // 10% of transactions
-    
-    // Session Replay
-    replaysSessionSampleRate: 0.1, // 10% of sessions
-    replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
-    
-    // Filter out development errors
-    beforeSend(event) {
-      if (import.meta.env.MODE === 'development') {
-        return null; // Don't send in dev
-      }
-      return event;
-    },
-  });
+  try {
+    Sentry.init({
+      dsn: import.meta.env.VITE_SENTRY_DSN,
+      environment: import.meta.env.MODE,
+      integrations: [
+        Sentry.browserTracingIntegration(),
+        // Disable replay integration to avoid 403 errors
+        // Sentry.replayIntegration({
+        //   maskAllText: false,
+        //   blockAllMedia: false,
+        // }),
+      ],
+
+      // Performance Monitoring
+      tracesSampleRate: 0.1, // 10% of transactions
+
+      // Session Replay - disabled
+      // replaysSessionSampleRate: 0.1, // 10% of sessions
+      // replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
+
+      // Filter out development errors
+      beforeSend(event) {
+        if (import.meta.env.MODE === 'development') {
+          return null; // Don't send in dev
+        }
+        return event;
+      },
+    });
+  } catch (error) {
+    console.error("Failed to initialize Sentry:", error);
+  }
 }
 
 // Helper to capture custom errors with context
