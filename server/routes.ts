@@ -72,10 +72,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/character", async (_req, res) => {
     try {
       const character = await storage.getCharacter();
-      if (!character) {
-        return res.status(404).json({ error: "Character not found" });
-      }
-      res.json(character);
+      // Return null instead of 404 when no character exists
+      // This allows the UI to properly detect "no active game" state
+      res.json(character || null);
     } catch (error) {
       console.error('Error fetching character:', error);
       res.status(500).json({ error: "Failed to fetch character" });
