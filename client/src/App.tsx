@@ -437,8 +437,8 @@ function GameApp() {
             <ArrowLeft className="w-4 h-4 mr-1" />
             Menu
           </Button>
-          <h1 className="font-serif text-lg sm:text-xl text-primary" data-testid="app-title">
-            ⚔️ AI Dungeon Master
+          <h1 className="font-bold text-lg sm:text-xl text-primary" data-testid="app-title">
+            ✨ STORY MODE
           </h1>
           <ThemeToggle />
         </div>

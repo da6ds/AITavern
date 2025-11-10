@@ -72,6 +72,7 @@ const adventureTemplates: AdventureTemplate[] = [
 You carry a burden that grows heavier with each passing hour: a simple golden ring, yet one that seems to pulse with ancient power. A wizard entrusted it to you with urgent instructions—take it to Rivendell, where the Elven council awaits. But dark riders have been spotted on the roads, cloaked figures who ask questions about "a hobbit" and "something precious." The innkeeper mentioned seeing such riders just this morning, their horses black as midnight, their voices cold as winter's grave.
 
 **What do you do?**
+• Introduce yourself: Tell me about who you are, your background, and why you were chosen for this dangerous task
 • Approach the innkeeper privately to ask about safe roads to Rivendell and learn what he knows about the dark riders
 • Find a quiet corner table and observe the other patrons, listening for useful information or potential allies
 • Rent a room for the night and plan your departure at first light, hoping to avoid unwanted attention
@@ -105,6 +106,7 @@ You carry a burden that grows heavier with each passing hour: a simple golden ri
 Captain Aldric greets you with a grim expression, his weathered face lined with concern. Three days ago, a patrol of four rangers set out on their routine border circuit—they should have returned yesterday. Their route takes them past three frontier settlements: Pinehaven, Stonebridge, and Wolfden. The captain spreads a map across the rough wooden table, marking their planned path with a calloused finger. Rumors speak of increased bandit activity, strange tracks in the snow, and settlers hearing unsettling sounds from the old ruins to the east.
 
 **What do you do?**
+• Introduce yourself: Share who you are, your ranger training, and what brings you to this northern outpost
 • Study the patrol route on the map and gather supplies before heading out immediately to search for the missing rangers
 • Interview other rangers in the lodge about recent threats, unusual sightings, or changes in the wilderness
 • Visit the nearest settlement, Pinehaven, to ask if anyone saw the patrol pass through and learn about local concerns
@@ -138,6 +140,7 @@ Captain Aldric greets you with a grim expression, his weathered face lined with 
 The reports came first as rumors, then as horrifying truth: a dragon, ancient and vast, has awakened in the eastern mountains. Entire villages lie in ash. Livestock vanishes overnight. Survivors speak of scales like midnight, wings that blot out the sun, and eyes that burn with cold intelligence. The king's own dragon-slayers rode out two weeks ago—none returned. Now His Majesty seeks heroes brave or foolish enough to face what armies could not. The court wizard suggests seeking the dragon's weakness in forgotten lore, while the marshal advocates gathering allies from neighboring kingdoms.
 
 **What do you do?**
+• Introduce yourself: Describe your background, skills, and what makes you qualified to face a dragon when others have failed
 • Speak with the court wizard to research dragon lore in the royal libraries and learn about historical dragon slayings
 • Meet with the marshal to discuss military strategy, gather elite warriors, and obtain the finest weapons available
 • Seek an audience with the king privately to learn everything he knows about the dragon and any secret information
@@ -171,6 +174,7 @@ The reports came first as rumors, then as horrifying truth: a dragon, ancient an
 You've descended into the Underdark seeking a captured drow noble who claims to possess critical intelligence about a planned surface raid. But nothing is simple in this realm of treachery and shifting alliances. Three great houses vie for dominance: House Velryn trades in information, House Zau'tar commands military might, and House Kilsek controls the markets and criminal networks. Each suspects the others of plotting. The prisoner languishes in House Velryn's dungeons, but extracting him—or even speaking with him—will require navigating byzantine politics where one wrong word could mean death, or worse.
 
 **What do you do?**
+• Introduce yourself: Explain who you are, why you've risked descending to the Underdark, and your experience with dangerous negotiations
 • Approach House Velryn's compound diplomatically to request an audience and negotiate for access to the prisoner
 • Gather information in the markets by listening to rumors, hiring a local guide, and learning about the current political situation
 • Seek out the criminal underworld controlled by House Kilsek to explore alternative methods of reaching the prisoner
@@ -204,6 +208,7 @@ You've descended into the Underdark seeking a captured drow noble who claims to 
 In your possession is a treasure map, worn and stained but unmistakably genuine, leading to the legendary hoard of Captain Redbeard—rubies the size of fists, chests overflowing with gold doubloons, and artifacts of lost civilizations. But the journey requires a ship, a crew, and enough supplies to survive waters prowled by rival pirates, sea monsters, and storms that appear out of nowhere. The map shows three islands forming a triangle: Skull Cove, where Redbeard's flagship went down; Siren's Rest, home to dangerous inhabitants; and Dead Man's Reef, where the treasure supposedly lies buried.
 
 **What do you do?**
+• Introduce yourself: Share your seafaring background, how you acquired this treasure map, and your sailing experience
 • Visit the harbor master to find a ship for sale or hire, and inquire about experienced captains looking for work
 • Recruit a crew at the Rusty Anchor tavern by buying rounds and seeking sailors with useful skills
 • Purchase supplies from the black market—weapons, navigation tools, and provisions for a long voyage
@@ -237,6 +242,7 @@ In your possession is a treasure map, worn and stained but unmistakably genuine,
 You've arrived for the entrance trials, a series of tests that will determine whether you possess the talent, discipline, and potential to join the Academy's ranks. Success means access to libraries filled with centuries of magical knowledge, mentorship from the realm's greatest wizards, and the chance to unlock powers you've only dreamed of. But strange occurrences shadow your arrival: the headmaster seems distracted and worried, whispers speak of magical disturbances in the forbidden archives, and two promising students vanished last week during late-night studies. Some say the Academy holds secrets darker than any spell in its curriculum.
 
 **What do you do?**
+• Introduce yourself: Describe your magical abilities so far, your background, and what you hope to learn at the Academy
 • Report to the Admissions Hall immediately to begin the entrance trials and prove your magical aptitude
 • Explore the Academy grounds to familiarize yourself with the campus, libraries, and practice halls before trials begin
 • Approach a group of current students to ask about the trials, learn about Academy life, and hear their concerns

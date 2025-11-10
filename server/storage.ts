@@ -187,6 +187,7 @@ export class MemStorage implements IStorage {
 You've traveled far to reach this place, drawn by rumors that have spread throughout the kingdom. Three villagers have vanished without a trace over the past fortnight, all last seen near the old forest road. Strange howls echo through the night—sounds unlike any natural wolf. The village elder, a weathered woman named Mirela with silver-streaked hair and knowing eyes, has posted notices seeking brave adventurers to investigate these dark omens. The local tavern, "The Sleeping Dragon," stands at the village square, its wooden sign creaking in the breeze. Smoke curls from the chimney, promising warmth, ale, and perhaps information from loose-tongued locals. The morning market sprawls nearby, where you might acquire supplies for the journey ahead. And there, at the far end of the main road, the forest looms—ancient, dark, and waiting.
 
 **What do you do?**
+• Introduce yourself: Tell me about who you are, where you come from, and what brings you to Millhaven
 • Visit the village elder Mirela at her cottage to learn the full details about the disappearances and accept the investigation quest
 • Head to The Sleeping Dragon tavern to gather rumors from locals and learn what the common folk know about the strange occurrences
 • Explore the village market to purchase supplies, weapons, potions, and equipment for your adventure
