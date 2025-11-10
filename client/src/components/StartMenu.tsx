@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Play, HelpCircle, Sword, Scroll, UserPlus, Map, Trash2, Sparkles } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { Character, Quest, Message } from "@shared/schema";
 
@@ -38,18 +38,25 @@ export default function StartMenu({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showOverviewModal, setShowOverviewModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   // Check if user has an active character/game
   const { data: character } = useQuery<Character>({
     queryKey: ['/api/character'],
+    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 0, // Consider data immediately stale
   });
 
   const { data: quests = [] } = useQuery<Quest[]>({
     queryKey: ['/api/quests'],
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const { data: messages = [] } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const hasActiveGame = !!character;
@@ -72,7 +79,17 @@ export default function StartMenu({
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
+      // Call the delete handler
       await onEndAdventure?.();
+
+      // Force refetch all queries to get updated data
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['/api/character'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/quests'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/messages'] }),
+      ]);
+
+      // Close modal after data is refreshed
       setShowDeleteModal(false);
     } catch (error) {
       console.error('Error deleting adventure:', error);
