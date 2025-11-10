@@ -131,11 +131,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/adventure/reset", async (req, res) => {
     try {
-      // Clear all adventure data (messages, quests, items, enemies, game state)
+      // Clear all adventure data (character, messages, quests, items, enemies, game state)
       await storage.clearAllAdventureData();
 
-      // Re-initialize with welcome message and default state
-      await storage.init();
+      // DO NOT re-initialize - user should start fresh with no character
+      // They can create a new character or select an adventure template
 
       res.json({ success: true });
     } catch (error) {
