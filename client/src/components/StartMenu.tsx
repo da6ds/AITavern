@@ -37,6 +37,7 @@ export default function StartMenu({
 }: StartMenuProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showOverviewModal, setShowOverviewModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Check if user has an active character/game
   const { data: character } = useQuery<Character>({
@@ -68,9 +69,16 @@ export default function StartMenu({
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = () => {
-    setShowDeleteModal(false);
-    onEndAdventure?.();
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onEndAdventure?.();
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Error deleting adventure:', error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -303,12 +311,12 @@ export default function StartMenu({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)} disabled={isDeleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
+            <Button variant="destructive" onClick={handleConfirmDelete} disabled={isDeleting}>
               <Trash2 className="w-4 h-4 mr-2" />
-              Delete Adventure
+              {isDeleting ? 'Deleting...' : 'Delete Adventure'}
             </Button>
           </DialogFooter>
         </DialogContent>
