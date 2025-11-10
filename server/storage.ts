@@ -172,6 +172,8 @@ export class MemStorage implements IStorage {
         currentTurn: null,
         combatId: null,
         turnCount: 0,
+      };
+    }
 
     // Initialize with welcome message from DM
     if (this.messages.length === 0) {
@@ -182,8 +184,6 @@ export class MemStorage implements IStorage {
         senderName: null,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
-    }
-      };
     }
   }
 
