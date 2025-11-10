@@ -285,16 +285,16 @@ function GameApp() {
           );
         }
         return character ? (
-          <CharacterSheet character={character} className="pb-20" />
+          <CharacterSheet character={character} className="h-full" />
         ) : (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground">No character found</p>
           </div>
         );
       case 'quests':
         if (questsLoading) {
           return (
-            <div className="flex items-center justify-center h-64" data-testid="loading-quests">
+            <div className="flex items-center justify-center h-full" data-testid="loading-quests">
               <p className="text-muted-foreground">Loading quests...</p>
             </div>
           );
@@ -304,29 +304,29 @@ function GameApp() {
             quests={quests}
             onQuestClick={handleQuestAction}
             onQuestDelete={handleDeleteQuest}
-            className="pb-20"
+            className="h-full"
           />
         );
       case 'inventory':
         if (itemsLoading) {
           return (
-            <div className="flex items-center justify-center h-64" data-testid="loading-inventory">
+            <div className="flex items-center justify-center h-full" data-testid="loading-inventory">
               <p className="text-muted-foreground">Loading inventory...</p>
             </div>
           );
         }
         return (
-          <Inventory 
+          <Inventory
             items={items}
             onItemTap={handleItemAction}
             onItemLongPress={(item) => console.log('Item details:', item)}
-            className="pb-20"
+            className="h-full"
           />
         );
       case 'chat':
         if (messagesLoading) {
           return (
-            <div className="flex items-center justify-center h-64" data-testid="loading-chat">
+            <div className="flex items-center justify-center h-full" data-testid="loading-chat">
               <p className="text-muted-foreground">Loading conversation...</p>
             </div>
           );
@@ -339,7 +339,7 @@ function GameApp() {
             onToggleListening={handleToggleListening}
             isLoading={aiChatMutation.isPending}
             onEndAdventure={handleEndAdventure}
-            className="pb-20"
+            className="h-full"
           />
         );
       default:
@@ -440,30 +440,34 @@ function GameApp() {
         error={characterError as Error | null}
       />
 
-      <div className="min-h-screen bg-background text-foreground">
-      {/* Page Title */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
-        <div className="flex items-center justify-between h-16 px-3 sm:px-4">
+      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+      {/* Page Title - Fixed height */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border shrink-0">
+        <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCurrentView("startMenu")}
-            className="text-muted-foreground"
+            className="text-muted-foreground min-h-[44px]"
             data-testid="button-return-menu"
           >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Menu
+            <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+            <span className="text-sm sm:text-base">Menu</span>
           </Button>
-          <h1 className="font-bold text-lg sm:text-xl text-primary" data-testid="app-title">
+          <h1 className="font-bold text-base sm:text-lg md:text-xl text-primary" data-testid="app-title">
             ✨ STORY MODE
           </h1>
-          <ThemeToggle />
+          <div className="min-w-[44px] flex justify-end">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
-      
-      {/* Main Content */}
-      <main className="px-3 sm:px-4 py-4 sm:py-6">
-        {getPageContent()}
+
+      {/* Main Content - Flexible height, accounts for header + nav */}
+      <main className="flex-1 overflow-auto px-3 sm:px-4 py-3 sm:py-4">
+        <div className="h-full">
+          {getPageContent()}
+        </div>
       </main>
       
       {/* Bottom Navigation */}

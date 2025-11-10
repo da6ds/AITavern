@@ -85,7 +85,7 @@ export default function ChatInterface({
   
   return (
     <div className={`h-full flex flex-col ${className}`} data-testid="chat-interface">
-      <Card className="flex-1 flex flex-col">
+      <Card className="flex-1 flex flex-col overflow-hidden">
         <PageHeader
           title="Your Story"
           subtitle="Chat with your narrator and characters"
@@ -97,10 +97,9 @@ export default function ChatInterface({
           }}
         />
 
-        <CardContent className="flex-1 flex flex-col space-y-4">
-          {/* Messages */}
-          <ScrollArea className="flex-1" ref={scrollRef}>
-            <div className="space-y-4 pr-4">
+        {/* Messages - flexible height */}
+        <div className="flex-1 overflow-auto px-4 sm:px-6 py-4" ref={scrollRef}>
+          <div className="space-y-3 sm:space-y-4">
               {messages.length === 0 ? (
                 <EmptyState
                   icon={MessageSquare}
@@ -113,32 +112,32 @@ export default function ChatInterface({
                   const isPlayer = message.sender === "player";
 
                   return (
-                    <div key={message.id} className="space-y-2">
+                    <div key={message.id} className="space-y-1.5">
                       <div className="flex items-center gap-2">
                         {getSenderBadge(message.sender, message.senderName)}
                         <span className="text-xs text-muted-foreground">{message.timestamp}</span>
                       </div>
-                      <div className={`p-3 rounded-lg ${
+                      <div className={`p-2.5 sm:p-3 rounded-lg ${
                         isPlayer
-                          ? "bg-primary/10 border-l-4 border-primary ml-4"
+                          ? "bg-primary/10 border-l-4 border-primary ml-2 sm:ml-4"
                           : "bg-muted/50"
                       }`}>
-                        <p className="text-sm text-foreground whitespace-pre-line">{text}</p>
+                        <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">{text}</p>
 
                         {/* Render clickable options for DM/NPC messages */}
                         {!isPlayer && options.length > 0 && (
-                          <div className="mt-4 space-y-2">
-                            <p className="text-sm font-semibold text-foreground">What do you do?</p>
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs sm:text-sm font-semibold text-foreground">What do you do?</p>
                             {options.map((option, index) => (
                               <Button
                                 key={index}
                                 variant="outline"
                                 size="sm"
-                                className="w-full justify-start text-left h-auto py-2 px-3"
+                                className="w-full justify-start text-left h-auto py-2.5 px-3 min-h-[44px]"
                                 onClick={() => onSendMessage?.(option)}
                                 disabled={isLoading}
                               >
-                                <span className="text-sm">{option}</span>
+                                <span className="text-sm leading-snug">{option}</span>
                               </Button>
                             ))}
                           </div>
@@ -151,48 +150,50 @@ export default function ChatInterface({
 
               {/* AI Thinking Indicator */}
               {isLoading && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 animate-pulse">
+                <div className="flex items-center gap-2 p-2.5 sm:p-3 rounded-lg bg-muted/50 animate-pulse">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <p className="text-sm text-muted-foreground">Your narrator is thinking...</p>
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
 
-          {/* Text Input */}
-          <div className="flex items-center gap-2">
-            <Button
-              size="icon"
-              variant={isListening ? "destructive" : "secondary"}
-              onClick={handleToggleListening}
-              className="shrink-0"
-              data-testid="button-voice-toggle"
-            >
-              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </Button>
-            
-            <div className="flex-1 flex gap-2">
-              <input
-                type="text"
-                placeholder={isListening ? "Listening..." : "Type your message..."}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSend()}
-                className="flex-1 px-3 py-2 bg-muted rounded-md text-sm text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary"
-                disabled={isListening || isLoading}
-                data-testid="input-chat-message"
-              />
-              <Button 
-                size="icon" 
-                onClick={handleSend} 
-                disabled={!inputText.trim() || isListening || isLoading}
-                data-testid="button-send-message"
+          {/* Text Input - Sticky at bottom on mobile */}
+          <div className="border-t border-border p-3 sm:p-4 bg-card">
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon"
+                variant={isListening ? "destructive" : "secondary"}
+                onClick={handleToggleListening}
+                className="shrink-0 h-11 w-11"
+                data-testid="button-voice-toggle"
               >
-                <Send className="w-4 h-4" />
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </Button>
+
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  placeholder={isListening ? "Listening..." : "Type your message..."}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSend()}
+                  className="flex-1 px-3 py-2.5 bg-muted rounded-md text-sm sm:text-base text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
+                  disabled={isListening || isLoading}
+                  data-testid="input-chat-message"
+                />
+                <Button
+                  size="icon"
+                  onClick={handleSend}
+                  disabled={!inputText.trim() || isListening || isLoading}
+                  className="h-11 w-11"
+                  data-testid="button-send-message"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
-        </CardContent>
       </Card>
     </div>
   );

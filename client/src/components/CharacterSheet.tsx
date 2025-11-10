@@ -59,10 +59,10 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
   };
 
   return (
-    <div className={`space-y-4 ${className}`} data-testid="character-sheet">
-      {/* Character Header */}
-      <Card>
-        <CardHeader className="text-center">
+    <div className={`${className}`} data-testid="character-sheet">
+      {/* Single Combined Card for Mobile Optimization */}
+      <Card className="overflow-hidden">
+        <CardHeader className="text-center pb-4">
           {isEditingName ? (
             <div className="flex items-center justify-center gap-2">
               <Input
@@ -70,7 +70,7 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
                 value={editedName}
                 onChange={(e) => setEditedName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="font-serif text-2xl text-primary text-center max-w-xs"
+                className="font-serif text-xl sm:text-2xl text-primary text-center max-w-xs"
                 autoFocus
                 disabled={updateNameMutation.isPending}
               />
@@ -79,7 +79,7 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
                 variant="ghost"
                 onClick={handleSaveName}
                 disabled={updateNameMutation.isPending}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 min-w-[44px] min-h-[44px]"
               >
                 <Check className="w-4 h-4" />
               </Button>
@@ -88,19 +88,19 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
                 variant="ghost"
                 onClick={handleCancelEdit}
                 disabled={updateNameMutation.isPending}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 min-w-[44px] min-h-[44px]"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2">
-              <CardTitle className="font-serif text-2xl text-primary">{character.name}</CardTitle>
+              <CardTitle className="font-serif text-xl sm:text-2xl text-primary">{character.name}</CardTitle>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setIsEditingName(true)}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 min-w-[44px] min-h-[44px]"
                 data-testid="edit-name-button"
               >
                 <Pencil className="w-4 h-4" />
@@ -112,7 +112,8 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
             <Badge variant="outline" data-testid="character-level">Level {character.level}</Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+
+        <CardContent className="space-y-6">
           {/* Health and Mana */}
           <div className="space-y-2">
             <HealthBar
@@ -146,22 +147,18 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
               {character.experience % 100}/100 to level {character.level + 1}
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Ability Scores */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Ability Scores</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <StatDisplay label="STR" value={character.strength} />
-            <StatDisplay label="DEX" value={character.dexterity} />
-            <StatDisplay label="CON" value={character.constitution} />
-            <StatDisplay label="INT" value={character.intelligence} />
-            <StatDisplay label="WIS" value={character.wisdom} />
-            <StatDisplay label="CHA" value={character.charisma} />
+          {/* Ability Scores - Compact mobile layout */}
+          <div>
+            <h3 className="font-serif text-base sm:text-lg font-semibold mb-3 text-foreground">Ability Scores</h3>
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+              <StatDisplay label="STR" value={character.strength} />
+              <StatDisplay label="DEX" value={character.dexterity} />
+              <StatDisplay label="CON" value={character.constitution} />
+              <StatDisplay label="INT" value={character.intelligence} />
+              <StatDisplay label="WIS" value={character.wisdom} />
+              <StatDisplay label="CHA" value={character.charisma} />
+            </div>
           </div>
         </CardContent>
       </Card>

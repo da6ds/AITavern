@@ -53,29 +53,33 @@ export default function QuestCard({ quest, onClick, onDelete, className = "" }: 
   };
 
   return (
-    <Card 
-      className={`hover-elevate cursor-pointer transition-all duration-200 ${className}`} 
+    <Card
+      className={`hover-elevate cursor-pointer transition-all duration-200 ${className}`}
       onClick={handleClick}
       data-testid={`quest-card-${quest.id}`}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-base font-serif flex items-center gap-2">
+      <CardHeader className="pb-3 sm:pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start gap-2 mb-2">
               {getStatusIcon()}
-              {quest.title}
-            </CardTitle>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant={getPriorityVariant()} className="text-xs">
+              <CardTitle className="text-sm sm:text-base font-serif leading-tight flex-1">
+                {quest.title}
+              </CardTitle>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant={getPriorityVariant()} className="text-xs h-6">
                 {getPriorityIcon()}
-                {quest.priority}
+                <span className="ml-1">{quest.priority}</span>
               </Badge>
-              <Badge variant="outline" className="text-xs">
-                {quest.status}
-              </Badge>
+              {quest.status === "active" && (
+                <Badge variant="outline" className="text-xs h-6">
+                  {quest.progress}/{quest.maxProgress}
+                </Badge>
+              )}
             </div>
           </div>
-          <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+          <ChevronRight className={`w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground transition-transform duration-200 shrink-0 mt-1 ${isExpanded ? 'rotate-90' : ''}`} />
         </div>
       </CardHeader>
       

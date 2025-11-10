@@ -20,7 +20,7 @@ export default function QuestLog({ quests, onQuestClick, onQuestDelete, classNam
   
   return (
     <div className={`h-full ${className}`} data-testid="quest-log">
-      <Card className="h-full">
+      <Card className="h-full flex flex-col">
         <PageHeader
           title="Quest Log"
           icon={ScrollText}
@@ -29,26 +29,26 @@ export default function QuestLog({ quests, onQuestClick, onQuestDelete, classNam
             { label: `${completedQuests.length} Completed`, variant: "outline" }
           ]}
         />
-        
-        <CardContent className="h-full overflow-hidden">
+
+        <CardContent className="flex-1 overflow-hidden">
           <Tabs defaultValue="active" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="active" className="text-xs">
-                <ScrollText className="w-4 h-4 mr-1" />
-                Active
+            <TabsList className="grid w-full grid-cols-3 h-11">
+              <TabsTrigger value="active" className="text-xs sm:text-sm">
+                <ScrollText className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Active</span>
               </TabsTrigger>
-              <TabsTrigger value="completed" className="text-xs">
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Done
+              <TabsTrigger value="completed" className="text-xs sm:text-sm">
+                <CheckCircle className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Done</span>
               </TabsTrigger>
-              <TabsTrigger value="failed" className="text-xs">
-                <XCircle className="w-4 h-4 mr-1" />
-                Failed
+              <TabsTrigger value="failed" className="text-xs sm:text-sm">
+                <XCircle className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Failed</span>
               </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="active" className="flex-1 overflow-auto mt-4">
-              <div className="space-y-4">
+
+            <TabsContent value="active" className="flex-1 overflow-auto mt-3 sm:mt-4">
+              <div className="space-y-3">
                 {activeQuests.length === 0 ? (
                   <EmptyState
                     icon={ScrollText}
@@ -68,8 +68,8 @@ export default function QuestLog({ quests, onQuestClick, onQuestDelete, classNam
               </div>
             </TabsContent>
 
-            <TabsContent value="completed" className="flex-1 overflow-auto mt-4">
-              <div className="space-y-4">
+            <TabsContent value="completed" className="flex-1 overflow-auto mt-3 sm:mt-4">
+              <div className="space-y-3">
                 {completedQuests.length === 0 ? (
                   <EmptyState
                     icon={CheckCircle}
@@ -88,8 +88,8 @@ export default function QuestLog({ quests, onQuestClick, onQuestDelete, classNam
               </div>
             </TabsContent>
 
-            <TabsContent value="failed" className="flex-1 overflow-auto mt-4">
-              <div className="space-y-4">
+            <TabsContent value="failed" className="flex-1 overflow-auto mt-3 sm:mt-4">
+              <div className="space-y-3">
                 {failedQuests.length === 0 ? (
                   <EmptyState
                     icon={XCircle}

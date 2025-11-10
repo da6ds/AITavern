@@ -29,12 +29,12 @@ export default function PageHeader({
   className = ""
 }: PageHeaderProps) {
   return (
-    <CardHeader className={className}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <CardTitle className="font-serif text-xl flex items-center gap-2">
-            {Icon && <Icon className="w-5 h-5" />}
-            {title}
+    <CardHeader className={`pb-4 ${className}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <CardTitle className="font-serif text-lg sm:text-xl flex items-center gap-2">
+            {Icon && <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />}
+            <span className="truncate">{title}</span>
           </CardTitle>
         </div>
         {action && (
@@ -42,21 +42,22 @@ export default function PageHeader({
             variant={action.variant || "outline"}
             size="sm"
             onClick={action.onClick}
+            className="shrink-0 min-h-[44px]"
           >
-            {action.icon && <action.icon className="w-4 h-4 mr-2" />}
-            {action.label}
+            {action.icon && <action.icon className="w-4 h-4 sm:mr-2" />}
+            <span className="hidden sm:inline">{action.label}</span>
           </Button>
         )}
       </div>
       {(subtitle || badges) && (
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
           {subtitle && (
-            <div className="text-sm text-muted-foreground">{subtitle}</div>
+            <div className="text-xs sm:text-sm text-muted-foreground line-clamp-1">{subtitle}</div>
           )}
           {badges && badges.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {badges.map((badge, index) => (
-                <Badge key={index} variant={badge.variant || "secondary"} className="text-xs">
+                <Badge key={index} variant={badge.variant || "secondary"} className="text-xs h-6">
                   {badge.label}
                 </Badge>
               ))}

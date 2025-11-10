@@ -23,37 +23,38 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
 
   return (
     <div className={`h-full ${className}`} data-testid="inventory">
-      <Card className="h-full">
+      <Card className="h-full flex flex-col">
         <PageHeader
           title="Inventory"
           icon={Package}
-          subtitle={`${items.length} items • Tap to use, hold for details`}
+          subtitle={`${items.length} items • Tap to use`}
         />
-        
-        <CardContent className="h-full overflow-hidden">
+
+        <CardContent className="flex-1 overflow-hidden">
           <Tabs defaultValue="all" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="all" className="text-xs px-2">
+            <TabsList className="grid w-full grid-cols-5 h-11">
+              <TabsTrigger value="all" className="text-xs px-1 sm:px-2">
                 <Package className="w-4 h-4" />
               </TabsTrigger>
-              <TabsTrigger value="weapons" className="text-xs px-2">
+              <TabsTrigger value="weapons" className="text-xs px-1 sm:px-2">
                 <Sword className="w-4 h-4" />
               </TabsTrigger>
-              <TabsTrigger value="armor" className="text-xs px-2">
+              <TabsTrigger value="armor" className="text-xs px-1 sm:px-2">
                 <Shield className="w-4 h-4" />
               </TabsTrigger>
-              <TabsTrigger value="consumables" className="text-xs px-2">
+              <TabsTrigger value="consumables" className="text-xs px-1 sm:px-2">
                 <Pill className="w-4 h-4" />
               </TabsTrigger>
-              <TabsTrigger value="misc" className="text-xs px-2">
-                Misc
+              <TabsTrigger value="misc" className="text-xs px-1 sm:px-2">
+                <Package className="w-3 h-3 sm:hidden" />
+                <span className="hidden sm:inline">Misc</span>
               </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="all" className="flex-1 overflow-auto mt-4">
-              <div className="grid grid-cols-2 gap-4">
+
+            <TabsContent value="all" className="flex-1 overflow-auto mt-3 sm:mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {allItems.length === 0 ? (
-                  <div className="col-span-2">
+                  <div className="col-span-2 sm:col-span-3 md:col-span-4">
                     <EmptyState icon={Package} title="No items" />
                   </div>
                 ) : (
@@ -69,10 +70,10 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               </div>
             </TabsContent>
 
-            <TabsContent value="weapons" className="flex-1 overflow-auto mt-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value="weapons" className="flex-1 overflow-auto mt-3 sm:mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {weapons.length === 0 ? (
-                  <div className="col-span-2">
+                  <div className="col-span-2 sm:col-span-3 md:col-span-4">
                     <EmptyState icon={Sword} title="No weapon items" />
                   </div>
                 ) : (
@@ -88,10 +89,10 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               </div>
             </TabsContent>
 
-            <TabsContent value="armor" className="flex-1 overflow-auto mt-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value="armor" className="flex-1 overflow-auto mt-3 sm:mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {armor.length === 0 ? (
-                  <div className="col-span-2">
+                  <div className="col-span-2 sm:col-span-3 md:col-span-4">
                     <EmptyState icon={Shield} title="No armor items" />
                   </div>
                 ) : (
@@ -107,10 +108,10 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               </div>
             </TabsContent>
 
-            <TabsContent value="consumables" className="flex-1 overflow-auto mt-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value="consumables" className="flex-1 overflow-auto mt-3 sm:mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {consumables.length === 0 ? (
-                  <div className="col-span-2">
+                  <div className="col-span-2 sm:col-span-3 md:col-span-4">
                     <EmptyState icon={Pill} title="No consumable items" />
                   </div>
                 ) : (
@@ -126,10 +127,10 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               </div>
             </TabsContent>
 
-            <TabsContent value="misc" className="flex-1 overflow-auto mt-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value="misc" className="flex-1 overflow-auto mt-3 sm:mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {misc.length === 0 ? (
-                  <div className="col-span-2">
+                  <div className="col-span-2 sm:col-span-3 md:col-span-4">
                     <EmptyState icon={Package} title="No misc items" />
                   </div>
                 ) : (
