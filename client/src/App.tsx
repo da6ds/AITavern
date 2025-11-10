@@ -107,23 +107,16 @@ function GameApp() {
     },
     enabled: isInCombat && !!gameState?.combatId,
   });
-  
   // AI Chat mutation
   const aiChatMutation = useMutation({
     mutationFn: async (message: string) => {
       const response = await apiRequest('POST', '/api/ai/chat', { message });
-      const startTime = Date.now();
       return response.json();
     },
     onSuccess: () => {
       // Refetch all data after AI response
-      const responseTime = Date.now() - startTime;
       analytics.messageSent("chat");
-      analytics.aiResponseReceived(responseTime);
       queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
-      const responseTime = Date.now() - startTime;
-      analytics.messageSent("chat");
-      analytics.aiResponseReceived(responseTime);
       queryClient.invalidateQueries({ queryKey: ['/api/character'] });
       queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
       queryClient.invalidateQueries({ queryKey: ['/api/items'] });
