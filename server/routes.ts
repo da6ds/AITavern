@@ -152,7 +152,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const template = result.data;
-      
+
+      // Create a default character if none exists
+      const existingCharacter = await storage.getCharacter();
+      if (!existingCharacter) {
+        await storage.createCharacter({
+          name: 'Adventurer',
+          class: 'Fighter',
+          level: 1,
+          experience: 0,
+          strength: 15,
+          dexterity: 14,
+          constitution: 13,
+          intelligence: 12,
+          wisdom: 12,
+          charisma: 11,
+          currentHealth: 10,
+          maxHealth: 10,
+          currentMana: 0,
+          maxMana: 0,
+        });
+      }
+
       // Update game state with the new adventure
       await storage.updateGameState({
         currentScene: template.initialScene,
@@ -185,8 +206,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         quest,
         message: welcomeMessage,
         gameState: await storage.getGameState()
