@@ -90,9 +90,9 @@ export default function StartMenu({
       </div>
 
       {/* Main Menu - New CTA Hierarchy */}
-      <div className="w-full max-w-4xl mx-auto space-y-4">
+      <div className="w-full max-w-4xl mx-auto space-y-6">
         {/* Primary CTA - Continue Adventure (only if has active game) */}
-        {hasActiveGame && (
+        {hasActiveGame ? (
           <Card className="p-6 hover-elevate border-primary/30 bg-primary/5">
             <div className="flex gap-3">
               <Button
@@ -129,57 +129,90 @@ export default function StartMenu({
               Resume your current quest and continue your journey
             </p>
           </Card>
+        ) : (
+          /* No Active Adventure - Show Getting Started */
+          <Card className="p-6 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+            <div className="text-center space-y-4">
+              <div>
+                <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+                  Ready to Begin Your Adventure?
+                </h2>
+                <p className="text-muted-foreground">
+                  Choose how you'd like to start your epic journey
+                </p>
+              </div>
+            </div>
+          </Card>
         )}
 
-        {/* Secondary CTAs - Main Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Adventure Templates */}
-          <Card className="p-6 hover-elevate">
+        {/* Action CTAs - Emphasized when no active game */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Adventure Templates - Primary when no active game */}
+          <Card className={`p-6 hover-elevate transition-all ${!hasActiveGame ? 'border-primary/30 bg-primary/5 ring-2 ring-primary/20' : ''}`}>
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Map className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-base mb-1">Adventure Templates</h3>
+                <p className="text-xs text-muted-foreground">
+                  Choose from preset adventures in familiar worlds
+                </p>
+              </div>
+            </div>
             <Button
-              variant="outline"
+              variant={!hasActiveGame ? "default" : "outline"}
               onClick={onShowAdventureTemplates}
-              className="w-full font-semibold h-12"
+              className="w-full font-semibold"
+              size={!hasActiveGame ? "lg" : "default"}
               data-testid="button-adventure-templates"
             >
-              <Map className="w-5 h-5 mr-2" />
-              Adventure Templates
+              {!hasActiveGame && <Sparkles className="w-4 h-4 mr-2" />}
+              Start Adventure
             </Button>
-            <p className="text-xs text-muted-foreground mt-3 text-center">
-              Choose from preset adventures in familiar worlds
-            </p>
+            {!hasActiveGame && (
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                Quickest way to begin playing
+              </p>
+            )}
           </Card>
 
           {/* Create New Character */}
           <Card className="p-6 hover-elevate">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <UserPlus className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-base mb-1">Create Character</h3>
+                <p className="text-xs text-muted-foreground">
+                  Design your adventurer with custom details
+                </p>
+              </div>
+            </div>
             <Button
               variant="outline"
               onClick={onCreateCharacter}
-              className="w-full font-semibold h-12"
+              className="w-full font-semibold"
               data-testid="button-create-character"
             >
-              <UserPlus className="w-5 h-5 mr-2" />
-              Create Character
+              Customize Hero
             </Button>
-            <p className="text-xs text-muted-foreground mt-3 text-center">
-              Design your adventurer with AI-generated portrait
-            </p>
           </Card>
+        </div>
 
-          {/* New Player Guide */}
-          <Card className="p-6 hover-elevate sm:col-span-2 lg:col-span-1">
-            <Button
-              variant="outline"
-              onClick={onShowGuide}
-              className="w-full font-semibold h-12"
-              data-testid="button-show-guide"
-            >
-              <HelpCircle className="w-5 h-5 mr-2" />
-              New Player Guide
-            </Button>
-            <p className="text-xs text-muted-foreground mt-3 text-center">
-              Learn the basics of tabletop RPG adventures
-            </p>
-          </Card>
+        {/* Helper Link */}
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onShowGuide}
+            className="text-muted-foreground"
+            data-testid="button-show-guide"
+          >
+            <HelpCircle className="w-4 h-4 mr-2" />
+            New to tabletop RPGs? Read the guide
+          </Button>
         </div>
       </div>
 
