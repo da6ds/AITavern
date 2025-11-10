@@ -57,6 +57,9 @@ export interface IStorage {
   getRecentMessages(limit: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   clearMessages(): Promise<void>;
+
+  // Clear all adventure data
+  clearAllAdventureData(): Promise<void>;
   
   // Campaign management
   getCampaigns(): Promise<Campaign[]>;
@@ -179,15 +182,15 @@ export class MemStorage implements IStorage {
     if (this.messages.length === 0) {
       this.messages.push({
         id: randomUUID(),
-        content: `The morning sun breaks through the mist as you arrive at Millhaven, a bustling village nestled between ancient forests and rolling hills. The scent of fresh bread wafts from the bakery, mingling with the metallic tang of the blacksmith's forge. Villagers bustle about their morning routines, but you notice worried glances cast toward the shadowy forest edge.
+        content: `The morning sun breaks through the mist as you arrive at Millhaven, a bustling village nestled between ancient forests and rolling hills. The scent of fresh bread wafts from the bakery, mingling with the metallic tang of the blacksmith's forge. Weathered stone buildings line cobblestone streets, their thatched roofs still damp from last night's rain. Villagers bustle about their morning routines—merchants setting up market stalls, children chasing chickens, farmers hauling carts of vegetables—but you notice something peculiar: worried glances cast toward the shadowy forest edge, and hushed conversations that fall silent when strangers pass.
 
-You've heard rumors of strange disappearances and unusual creatures in these lands. The village elder, a weathered woman named Mirela, has been seeking brave adventurers to investigate. The local tavern, "The Sleeping Dragon," seems like a good place to gather information.
+You've traveled far to reach this place, drawn by rumors that have spread throughout the kingdom. Three villagers have vanished without a trace over the past fortnight, all last seen near the old forest road. Strange howls echo through the night—sounds unlike any natural wolf. The village elder, a weathered woman named Mirela with silver-streaked hair and knowing eyes, has posted notices seeking brave adventurers to investigate these dark omens. The local tavern, "The Sleeping Dragon," stands at the village square, its wooden sign creaking in the breeze. Smoke curls from the chimney, promising warmth, ale, and perhaps information from loose-tongued locals. The morning market sprawls nearby, where you might acquire supplies for the journey ahead. And there, at the far end of the main road, the forest looms—ancient, dark, and waiting.
 
 **What do you do?**
-• Visit the village elder Mirela to learn about the troubles plaguing Millhaven
-• Head to The Sleeping Dragon tavern to gather rumors and information
-• Explore the village market to purchase supplies and equipment
-• Investigate the forest edge where the strange occurrences have been reported`,
+• Visit the village elder Mirela at her cottage to learn the full details about the disappearances and accept the investigation quest
+• Head to The Sleeping Dragon tavern to gather rumors from locals and learn what the common folk know about the strange occurrences
+• Explore the village market to purchase supplies, weapons, potions, and equipment for your adventure
+• Investigate the forest edge immediately to search for clues about the missing villagers and strange creatures`,
         sender: "dm",
         senderName: null,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -482,6 +485,26 @@ You've heard rumors of strange disappearances and unusual creatures in these lan
 
   async clearMessages(): Promise<void> {
     this.messages = [];
+  }
+
+  async clearAllAdventureData(): Promise<void> {
+    // Clear all game data for a fresh start
+    this.messages = [];
+    this.quests.clear();
+    this.items.clear();
+    this.enemies.clear();
+
+    // Reset game state
+    if (this.gameState) {
+      this.gameState = {
+        ...this.gameState,
+        currentScene: "A new adventure awaits...",
+        inCombat: false,
+        currentTurn: null,
+        turnCount: 0,
+        combatId: null
+      };
+    }
   }
 
   // Game state management
