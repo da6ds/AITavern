@@ -23,11 +23,11 @@ export default function ItemCard({ item, onTap, onLongPress, className = "", isD
   
   const getRarityColor = () => {
     switch (item.rarity) {
-      case "legendary": return "border-yellow-400 bg-yellow-400/10";
-      case "epic": return "border-purple-400 bg-purple-400/10";
-      case "rare": return "border-blue-400 bg-blue-400/10";
-      case "uncommon": return "border-green-400 bg-green-400/10";
-      default: return "border-muted bg-muted/20";
+      case "legendary": return "border-[hsl(var(--rarity-legendary))] bg-[hsl(var(--rarity-legendary))]/10";
+      case "epic": return "border-[hsl(var(--rarity-epic))] bg-[hsl(var(--rarity-epic))]/10";
+      case "rare": return "border-[hsl(var(--rarity-rare))] bg-[hsl(var(--rarity-rare))]/10";
+      case "uncommon": return "border-[hsl(var(--rarity-uncommon))] bg-[hsl(var(--rarity-uncommon))]/10";
+      default: return "border-[hsl(var(--rarity-common))] bg-[hsl(var(--rarity-common))]/10";
     }
   };
   

@@ -1,6 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ItemCard from "./ItemCard";
+import PageHeader from "./PageHeader";
+import EmptyState from "./EmptyState";
 import type { Item } from "@shared/schema";
 import { Package, Sword, Shield, Pill } from "lucide-react";
 
@@ -18,26 +20,15 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
   const misc = items.filter(item => item.type === "misc");
   
   const allItems = items;
-  
-  const EmptyState = ({ type }: { type: string }) => (
-    <div className="text-center py-8 text-muted-foreground">
-      <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-      <p>No {type} items</p>
-    </div>
-  );
-  
+
   return (
     <div className={`h-full ${className}`} data-testid="inventory">
       <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            Inventory
-          </CardTitle>
-          <div className="text-sm text-muted-foreground">
-            {items.length} items • Tap to use, hold for details
-          </div>
-        </CardHeader>
+        <PageHeader
+          title="Inventory"
+          icon={Package}
+          subtitle={`${items.length} items • Tap to use, hold for details`}
+        />
         
         <CardContent className="h-full overflow-hidden">
           <Tabs defaultValue="all" className="h-full flex flex-col">
@@ -63,7 +54,7 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               <div className="grid grid-cols-2 gap-4">
                 {allItems.length === 0 ? (
                   <div className="col-span-2">
-                    <EmptyState type="" />
+                    <EmptyState icon={Package} title="No items" />
                   </div>
                 ) : (
                   allItems.map((item) => (
@@ -82,7 +73,7 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               <div className="grid grid-cols-2 gap-4">
                 {weapons.length === 0 ? (
                   <div className="col-span-2">
-                    <EmptyState type="weapon" />
+                    <EmptyState icon={Sword} title="No weapon items" />
                   </div>
                 ) : (
                   weapons.map((item) => (
@@ -101,7 +92,7 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               <div className="grid grid-cols-2 gap-4">
                 {armor.length === 0 ? (
                   <div className="col-span-2">
-                    <EmptyState type="armor" />
+                    <EmptyState icon={Shield} title="No armor items" />
                   </div>
                 ) : (
                   armor.map((item) => (
@@ -120,7 +111,7 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               <div className="grid grid-cols-2 gap-4">
                 {consumables.length === 0 ? (
                   <div className="col-span-2">
-                    <EmptyState type="consumable" />
+                    <EmptyState icon={Pill} title="No consumable items" />
                   </div>
                 ) : (
                   consumables.map((item) => (
@@ -139,7 +130,7 @@ export default function Inventory({ items, onItemTap, onItemLongPress, className
               <div className="grid grid-cols-2 gap-4">
                 {misc.length === 0 ? (
                   <div className="col-span-2">
-                    <EmptyState type="misc" />
+                    <EmptyState icon={Package} title="No misc items" />
                   </div>
                 ) : (
                   misc.map((item) => (

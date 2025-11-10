@@ -76,6 +76,19 @@
   --chart-4: 160 65% 40%;
   --chart-5: 15 80% 50%;
 
+  /* Item Rarity Colors */
+  --rarity-common: 220 15% 40%;
+  --rarity-uncommon: 160 65% 40%;
+  --rarity-rare: 220 70% 55%;
+  --rarity-epic: 285 60% 55%;
+  --rarity-legendary: 45 90% 55%;
+
+  /* Status Colors */
+  --success: 160 65% 40%;
+  --success-foreground: 160 15% 95%;
+  --warning: 45 90% 55%;
+  --warning-foreground: 45 15% 15%;
+
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --font-serif: Cinzel, ui-serif, Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -193,6 +206,19 @@
   --chart-3: 285 60% 70%;
   --chart-4: 160 65% 65%;
   --chart-5: 15 80% 70%;
+
+  /* Item Rarity Colors (Dark Mode) */
+  --rarity-common: 220 15% 65%;
+  --rarity-uncommon: 160 65% 65%;
+  --rarity-rare: 220 70% 70%;
+  --rarity-epic: 285 60% 70%;
+  --rarity-legendary: 45 90% 65%;
+
+  /* Status Colors (Dark Mode) */
+  --success: 160 65% 65%;
+  --success-foreground: 160 15% 15%;
+  --warning: 45 90% 65%;
+  --warning-foreground: 45 15% 15%;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.25);
   --shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.25);

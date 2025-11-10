@@ -1,7 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import PageHeader from "./PageHeader";
+import EmptyState from "./EmptyState";
 import { Mic, MicOff, Send, Swords, Eye, MessageSquare, Loader2 } from "lucide-react";
 import type { Message } from "@shared/schema";
 import { useState, useRef, useEffect } from "react";
@@ -72,23 +74,21 @@ export default function ChatInterface({
   return (
     <div className={`h-full flex flex-col ${className}`} data-testid="chat-interface">
       <Card className="flex-1 flex flex-col">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl">Adventure Chat</CardTitle>
-          <div className="text-sm text-muted-foreground mt-2">
-            Speak with the DM and NPCs • Use voice or quick actions
-          </div>
-        </CardHeader>
+        <PageHeader
+          title="Adventure Chat"
+          subtitle="Speak with the DM and NPCs • Use voice or quick actions"
+        />
 
         <CardContent className="flex-1 flex flex-col space-y-4">
           {/* Messages */}
           <ScrollArea className="flex-1" ref={scrollRef}>
             <div className="space-y-4 pr-4">
               {messages.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-base">No messages yet</p>
-                  <p className="text-sm mt-2">Start your adventure by speaking or using quick actions!</p>
-                </div>
+                <EmptyState
+                  icon={MessageSquare}
+                  title="No messages yet"
+                  description="Start your adventure by speaking or using quick actions!"
+                />
               ) : (
                 messages.map((message) => (
                   <div key={message.id} className="space-y-2">

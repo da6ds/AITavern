@@ -1,7 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import QuestCard from "./QuestCard";
+import PageHeader from "./PageHeader";
+import EmptyState from "./EmptyState";
 import type { Quest } from "@shared/schema";
 import { ScrollText, CheckCircle, XCircle } from "lucide-react";
 
@@ -19,20 +20,14 @@ export default function QuestLog({ quests, onQuestClick, className = "" }: Quest
   return (
     <div className={`h-full ${className}`} data-testid="quest-log">
       <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="font-serif text-xl flex items-center gap-2">
-            <ScrollText className="w-5 h-5" />
-            Quest Log
-          </CardTitle>
-          <div className="flex gap-2">
-            <Badge variant="secondary" className="text-xs">
-              {activeQuests.length} Active
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {completedQuests.length} Completed
-            </Badge>
-          </div>
-        </CardHeader>
+        <PageHeader
+          title="Quest Log"
+          icon={ScrollText}
+          badges={[
+            { label: `${activeQuests.length} Active`, variant: "secondary" },
+            { label: `${completedQuests.length} Completed`, variant: "outline" }
+          ]}
+        />
         
         <CardContent className="h-full overflow-hidden">
           <Tabs defaultValue="active" className="h-full flex flex-col">
@@ -54,11 +49,11 @@ export default function QuestLog({ quests, onQuestClick, className = "" }: Quest
             <TabsContent value="active" className="flex-1 overflow-auto mt-4">
               <div className="space-y-4">
                 {activeQuests.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <ScrollText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-base">No active quests</p>
-                    <p className="text-sm mt-2">Speak with NPCs to discover new adventures!</p>
-                  </div>
+                  <EmptyState
+                    icon={ScrollText}
+                    title="No active quests"
+                    description="Speak with NPCs to discover new adventures!"
+                  />
                 ) : (
                   activeQuests.map((quest) => (
                     <QuestCard
@@ -74,10 +69,10 @@ export default function QuestLog({ quests, onQuestClick, className = "" }: Quest
             <TabsContent value="completed" className="flex-1 overflow-auto mt-4">
               <div className="space-y-4">
                 {completedQuests.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <CheckCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-base">No completed quests yet</p>
-                  </div>
+                  <EmptyState
+                    icon={CheckCircle}
+                    title="No completed quests yet"
+                  />
                 ) : (
                   completedQuests.map((quest) => (
                     <QuestCard
@@ -93,10 +88,10 @@ export default function QuestLog({ quests, onQuestClick, className = "" }: Quest
             <TabsContent value="failed" className="flex-1 overflow-auto mt-4">
               <div className="space-y-4">
                 {failedQuests.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <XCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-base">No failed quests</p>
-                  </div>
+                  <EmptyState
+                    icon={XCircle}
+                    title="No failed quests"
+                  />
                 ) : (
                   failedQuests.map((quest) => (
                     <QuestCard
