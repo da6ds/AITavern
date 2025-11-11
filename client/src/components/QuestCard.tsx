@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronRight, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
 import type { Quest } from "@shared/schema";
 import { useState } from "react";
+import { analytics } from "@/lib/posthog";
 
 interface QuestCardProps {
   quest: Quest;
@@ -43,12 +44,34 @@ export default function QuestCard({ quest, onClick, onDelete, className = "" }: 
   };
 
   const handleClick = () => {
-    setIsExpanded(!isExpanded);
+    const newExpanded = !isExpanded;
+    console.log('[QuestCard] Quest card clicked', {
+      questId: quest.id,
+      questTitle: quest.title,
+      expanding: newExpanded
+    });
+
+    if (newExpanded) {
+      analytics.questExpanded(quest.id, quest.title);
+    }
+
+    setIsExpanded(newExpanded);
     onClick?.();
   };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card expansion when clicking delete
+    console.log('[QuestCard] Delete quest button clicked', {
+      questId: quest.id,
+      questTitle: quest.title,
+      questStatus: quest.status
+    });
+    analytics.questDeleted(quest.id, quest.title, quest.status);
+    analytics.buttonClicked('Delete Quest', 'Quest Card', {
+      quest_id: quest.id,
+      quest_title: quest.title,
+      quest_status: quest.status
+    });
     onDelete?.(quest.id);
   };
 

@@ -24,6 +24,7 @@ import ColdStartLoader from "./components/ColdStartLoader";
 import { useTooltips } from "./hooks/useTooltips";
 import { useAnalytics, useSessionTracking } from "./hooks/useAnalytics";
 import { useNotifications } from "./hooks/useNotifications";
+import { setUserContext, setGameContext } from "./lib/sentry";
 
 // Types
 import type { Character, Quest, Item, Message, Enemy, GameState } from "@shared/schema";
@@ -35,6 +36,67 @@ function GameApp() {
   const [currentView, setCurrentView] = useState<ViewType>("welcome");
   const [activeTab, setActiveTab] = useState<TabType>("character");
   const [isListening, setIsListening] = useState(false);
+
+  // Track view changes (welcome, menu, game, etc)
+  useEffect(() => {
+    const viewNames = {
+      welcome: 'Welcome Screen',
+      startMenu: 'Start Menu',
+      userGuide: 'User Guide',
+      characterCreation: 'Character Creation',
+      adventureTemplates: 'Adventure Templates',
+      game: 'Game Screen'
+    };
+    console.log('[App] View changed to:', currentView);
+    analytics.screenViewed(viewNames[currentView], { view: currentView });
+  }, [currentView]);
+
+  // Track screen views when tab changes (within game)
+  useEffect(() => {
+    if (currentView === 'game') {
+      const screenNames = {
+        character: 'Character Sheet',
+        quests: 'Quest Log',
+        inventory: 'Inventory',
+        chat: 'Chat Interface'
+      };
+      analytics.screenViewed(screenNames[activeTab], { tab: activeTab });
+    }
+  }, [activeTab, currentView]);
+
+  // Update Sentry context when character data changes
+  useEffect(() => {
+    if (character) {
+      console.log('[App] Updating Sentry user context', {
+        characterId: character.id,
+        characterName: character.name,
+        level: character.level
+      });
+      setUserContext(character.id, {
+        name: character.name,
+        level: character.level,
+        class: character.class
+      });
+    }
+  }, [character]);
+
+  // Update Sentry context when game state changes
+  useEffect(() => {
+    console.log('[App] Updating Sentry game context', {
+      currentView,
+      currentTab: currentView === 'game' ? activeTab : undefined,
+      questCount: quests.length,
+      itemCount: items.length,
+      inCombat: isInCombat
+    });
+    setGameContext({
+      currentView,
+      currentTab: currentView === 'game' ? activeTab : undefined,
+      activeQuestCount: quests.filter(q => q.status === 'active').length,
+      itemCount: items.length,
+      inCombat: isInCombat
+    });
+  }, [currentView, activeTab, quests.length, items.length, isInCombat]);
   
   // Demo and tooltip functionality
   const {
@@ -113,11 +175,40 @@ function GameApp() {
   // AI Chat mutation
   const aiChatMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest('POST', '/api/ai/chat', { message });
-      return response.json();
+      const startTime = Date.now();
+      console.log('[App] Sending message to AI:', message.substring(0, 100));
+
+      try {
+        const response = await apiRequest('POST', '/api/ai/chat', { message });
+        const data = await response.json();
+        const duration = Date.now() - startTime;
+
+        console.log('[App] AI response received:', {
+          duration,
+          success: true,
+          hasContent: !!data.content
+        });
+
+        analytics.aiResponseReceived(duration, true);
+        return data;
+      } catch (error: any) {
+        const duration = Date.now() - startTime;
+        console.error('[App] AI response failed:', {
+          error: error.message,
+          duration
+        });
+
+        analytics.aiResponseFailed(error.message, duration);
+        analytics.errorOccurred('ai_response_error', error.message, {
+          message_preview: message.substring(0, 100),
+          duration_ms: duration
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       // Refetch all data after AI response
+      console.log('[App] AI response successful, refreshing data');
       analytics.messageSent("chat");
       queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
       queryClient.invalidateQueries({ queryKey: ['/api/character'] });
@@ -126,6 +217,9 @@ function GameApp() {
       queryClient.invalidateQueries({ queryKey: ['/api/game-state'] });
       queryClient.invalidateQueries({ queryKey: ['/api/enemies'] });
     },
+    onError: (error: any) => {
+      console.error('[App] AI mutation error:', error);
+    }
   });
   
   // Combat action mutation
@@ -447,7 +541,14 @@ function GameApp() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setCurrentView("startMenu")}
+            onClick={() => {
+              console.log('[App] Return to menu button clicked');
+              analytics.buttonClicked('Return to Menu', 'Top Navigation', {
+                from_tab: activeTab
+              });
+              analytics.returnToMenu(activeTab);
+              setCurrentView("startMenu");
+            }}
             className="text-muted-foreground min-h-[44px]"
             data-testid="button-return-menu"
           >

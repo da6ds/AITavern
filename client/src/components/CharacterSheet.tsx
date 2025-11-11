@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import StatDisplay from "./StatDisplay";
 import HealthBar from "./HealthBar";
 import type { Character } from "@shared/schema";
+import { analytics } from "@/lib/posthog";
 
 interface CharacterSheetProps {
   character: Character;
@@ -21,6 +22,10 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
 
   const updateNameMutation = useMutation({
     mutationFn: async (newName: string) => {
+      console.log('[CharacterSheet] Updating character name', {
+        oldName: character.name,
+        newName
+      });
       const response = await fetch(`/api/character/${character.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -29,23 +34,37 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
       if (!response.ok) throw new Error('Failed to update name');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, newName) => {
+      console.log('[CharacterSheet] Character name updated successfully');
+      analytics.characterNameEdited(character.name, newName);
       queryClient.invalidateQueries({ queryKey: ['/api/character'] });
       setIsEditingName(false);
     },
+    onError: (error) => {
+      console.error('[CharacterSheet] Failed to update character name:', error);
+      analytics.errorOccurred('character_name_update_error', error instanceof Error ? error.message : 'Unknown error');
+    }
   });
 
   const handleSaveName = () => {
     const trimmedName = editedName.trim();
     if (trimmedName && trimmedName !== character.name) {
+      console.log('[CharacterSheet] Save name button clicked');
+      analytics.buttonClicked('Save Character Name', 'Character Sheet', {
+        old_name: character.name,
+        new_name: trimmedName
+      });
       updateNameMutation.mutate(trimmedName);
     } else {
+      console.log('[CharacterSheet] Name unchanged, cancelling edit');
       setIsEditingName(false);
       setEditedName(character.name);
     }
   };
 
   const handleCancelEdit = () => {
+    console.log('[CharacterSheet] Cancel name edit button clicked');
+    analytics.buttonClicked('Cancel Name Edit', 'Character Sheet');
     setIsEditingName(false);
     setEditedName(character.name);
   };
@@ -99,7 +118,11 @@ export default function CharacterSheet({ character, className = "" }: CharacterS
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setIsEditingName(true)}
+                onClick={() => {
+                  console.log('[CharacterSheet] Edit name button clicked');
+                  analytics.buttonClicked('Edit Character Name', 'Character Sheet');
+                  setIsEditingName(true);
+                }}
                 className="h-9 w-9 p-0 min-w-[44px] min-h-[44px]"
                 data-testid="edit-name-button"
               >

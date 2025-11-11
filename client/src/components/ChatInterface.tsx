@@ -7,6 +7,7 @@ import EmptyState from "./EmptyState";
 import { Mic, MicOff, Send, MessageSquare, Loader2, XCircle } from "lucide-react";
 import type { Message } from "@shared/schema";
 import { useState, useRef, useEffect } from "react";
+import { analytics } from "@/lib/posthog";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -61,15 +62,29 @@ export default function ChatInterface({
   
   const handleSend = () => {
     if (inputText.trim()) {
+      console.log('[ChatInterface] Send message button clicked', {
+        messageLength: inputText.length
+      });
+      analytics.buttonClicked('Send Message', 'Chat Interface', {
+        message_length: inputText.length,
+        via: 'button'
+      });
+      analytics.messageSent('chat');
       onSendMessage?.(inputText);
       setInputText("");
-      console.log('Message sent:', inputText);
     }
   };
 
   const handleToggleListening = () => {
+    console.log('[ChatInterface] Voice toggle button clicked', {
+      wasListening: isListening,
+      nowListening: !isListening
+    });
+    analytics.buttonClicked('Toggle Voice', 'Chat Interface', {
+      was_listening: isListening,
+      now_listening: !isListening
+    });
     onToggleListening?.();
-    console.log('Speech recognition toggled:', !isListening);
   };
   
   const getSenderBadge = (sender: string, senderName?: string | null) => {
@@ -91,7 +106,11 @@ export default function ChatInterface({
           subtitle="Chat with your narrator and characters"
           action={{
             label: "End Story",
-            onClick: onEndAdventure || (() => {}),
+            onClick: () => {
+              console.log('[ChatInterface] End Story button clicked');
+              analytics.buttonClicked('End Story', 'Chat Interface');
+              onEndAdventure?.();
+            },
             icon: XCircle,
             variant: "destructive"
           }}
@@ -134,7 +153,16 @@ export default function ChatInterface({
                                 variant="outline"
                                 size="sm"
                                 className="w-full justify-start text-left h-auto py-2.5 px-3 min-h-[44px]"
-                                onClick={() => onSendMessage?.(option)}
+                                onClick={() => {
+                                  console.log('[ChatInterface] Quick action option clicked', {
+                                    option: option.substring(0, 50)
+                                  });
+                                  analytics.buttonClicked('Quick Action Option', 'Chat Interface', {
+                                    option_preview: option.substring(0, 50)
+                                  });
+                                  analytics.messageSent('action');
+                                  onSendMessage?.(option);
+                                }}
                                 disabled={isLoading}
                               >
                                 <span className="text-sm leading-snug">{option}</span>
@@ -177,7 +205,21 @@ export default function ChatInterface({
                   placeholder={isListening ? "Listening..." : "Type your message..."}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSend()}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      if (inputText.trim()) {
+                        console.log('[ChatInterface] Message sent via Enter key', {
+                          messageLength: inputText.length
+                        });
+                        analytics.buttonClicked('Send Message', 'Chat Interface', {
+                          message_length: inputText.length,
+                          via: 'enter_key'
+                        });
+                        analytics.messageSent('chat');
+                      }
+                      handleSend();
+                    }
+                  }}
                   className="flex-1 px-3 py-2.5 bg-muted rounded-md text-sm sm:text-base text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
                   disabled={isListening || isLoading}
                   data-testid="input-chat-message"

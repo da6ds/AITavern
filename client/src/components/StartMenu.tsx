@@ -18,6 +18,7 @@ import { Play, HelpCircle, Sword, Scroll, UserPlus, Map, Trash2, Sparkles } from
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { Character, Quest, Message } from "@shared/schema";
+import { analytics } from "@/lib/posthog";
 
 interface StartMenuProps {
   onStartGame: () => void;
@@ -64,23 +65,45 @@ export default function StartMenu({
   const recentMessage = messages.length > 1 ? messages[messages.length - 1] : null;
 
   const handleContinueClick = () => {
+    console.log('[StartMenu] Continue Adventure button clicked');
+    analytics.buttonClicked('Continue Adventure', 'Start Menu', {
+      hasActiveQuests: activeQuests.length > 0,
+      questCount: quests.length
+    });
     setShowOverviewModal(true);
   };
 
   const handleConfirmContinue = () => {
+    console.log('[StartMenu] Confirmed continue from overview modal');
+    analytics.buttonClicked('Confirm Continue', 'Adventure Overview Modal');
     setShowOverviewModal(false);
     onStartGame();
   };
 
   const handleDeleteClick = () => {
+    console.log('[StartMenu] Delete Adventure button clicked');
+    analytics.buttonClicked('Delete Adventure', 'Start Menu');
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
+    console.log('[StartMenu] Confirming adventure deletion', {
+      characterName: character?.name,
+      questCount: quests.length,
+      messageCount: messages.length
+    });
+    analytics.buttonClicked('Confirm Delete Adventure', 'Delete Modal', {
+      character_name: character?.name,
+      quest_count: quests.length,
+      message_count: messages.length
+    });
+
     setIsDeleting(true);
     try {
       // Call the delete handler
       await onEndAdventure?.();
+
+      analytics.adventureEnded('user_deleted', undefined);
 
       // Force refetch all queries to get updated data
       await Promise.all([
@@ -89,10 +112,12 @@ export default function StartMenu({
         queryClient.refetchQueries({ queryKey: ['/api/messages'] }),
       ]);
 
+      console.log('[StartMenu] Adventure deleted successfully');
       // Close modal after data is refreshed
       setShowDeleteModal(false);
     } catch (error) {
-      console.error('Error deleting adventure:', error);
+      console.error('[StartMenu] Error deleting adventure:', error);
+      analytics.errorOccurred('adventure_delete_error', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsDeleting(false);
     }
@@ -186,7 +211,13 @@ export default function StartMenu({
             </div>
             <Button
               variant={!hasActiveGame ? "default" : "outline"}
-              onClick={onShowAdventureTemplates}
+              onClick={() => {
+                console.log('[StartMenu] Adventure Templates button clicked');
+                analytics.buttonClicked('Start Adventure', 'Start Menu', {
+                  hasActiveGame
+                });
+                onShowAdventureTemplates();
+              }}
               className="w-full font-semibold"
               size={!hasActiveGame ? "lg" : "default"}
               data-testid="button-adventure-templates"
@@ -216,7 +247,11 @@ export default function StartMenu({
             </div>
             <Button
               variant="outline"
-              onClick={onCreateCharacter}
+              onClick={() => {
+                console.log('[StartMenu] Create Character button clicked');
+                analytics.buttonClicked('Customize Hero', 'Start Menu');
+                onCreateCharacter();
+              }}
               className="w-full font-semibold"
               data-testid="button-create-character"
             >
@@ -230,7 +265,11 @@ export default function StartMenu({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onShowGuide}
+            onClick={() => {
+              console.log('[StartMenu] Show Guide button clicked');
+              analytics.buttonClicked('Show Guide', 'Start Menu');
+              onShowGuide();
+            }}
             className="text-muted-foreground"
             data-testid="button-show-guide"
           >
@@ -305,7 +344,14 @@ export default function StartMenu({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowOverviewModal(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                console.log('[StartMenu] Back to Menu from overview modal');
+                analytics.buttonClicked('Back to Menu', 'Adventure Overview Modal');
+                setShowOverviewModal(false);
+              }}
+            >
               Back to Menu
             </Button>
             <Button onClick={handleConfirmContinue}>
@@ -327,7 +373,15 @@ export default function StartMenu({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteModal(false)} disabled={isDeleting}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                console.log('[StartMenu] Cancel delete from modal');
+                analytics.buttonClicked('Cancel Delete', 'Delete Modal');
+                setShowDeleteModal(false);
+              }}
+              disabled={isDeleting}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete} disabled={isDeleting}>

@@ -42,24 +42,63 @@ export function initSentry() {
 
 // Helper to capture custom errors with context
 export function captureError(error: Error, context?: Record<string, any>) {
+  console.error('[Sentry] Capturing error:', error.message, context);
   Sentry.captureException(error, {
     extra: context,
   });
 }
 
-// Helper to set user context
-export function setUserContext(userId: string, username?: string) {
+// Helper to set user context with character info
+export function setUserContext(userId: string, characterInfo?: {
+  name?: string;
+  level?: number;
+  class?: string;
+}) {
+  console.log('[Sentry] Setting user context:', { userId, characterInfo });
   Sentry.setUser({
     id: userId,
-    username: username,
+    username: characterInfo?.name || 'Unknown Adventurer',
   });
+
+  if (characterInfo) {
+    Sentry.setContext("character", {
+      name: characterInfo.name,
+      level: characterInfo.level,
+      class: characterInfo.class,
+    });
+  }
+}
+
+// Helper to set game state context
+export function setGameContext(context: {
+  currentScene?: string;
+  activeQuestCount?: number;
+  itemCount?: number;
+  inCombat?: boolean;
+  currentView?: string;
+  currentTab?: string;
+}) {
+  console.log('[Sentry] Setting game context:', context);
+  Sentry.setContext("game_state", context);
 }
 
 // Helper to add breadcrumb (trail of events leading to error)
 export function addBreadcrumb(message: string, data?: Record<string, any>) {
+  console.log('[Sentry] Adding breadcrumb:', message, data);
   Sentry.addBreadcrumb({
     message,
     data,
     level: 'info',
   });
+}
+
+// Helper to capture messages
+export function captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info', context?: Record<string, any>) {
+  console.log(`[Sentry] Capturing message (${level}):`, message, context);
+
+  if (context) {
+    Sentry.setContext("message_context", context);
+  }
+
+  Sentry.captureMessage(message, level);
 }

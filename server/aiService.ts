@@ -183,13 +183,31 @@ Remember: Keep responses engaging but focused. Always give players clear options
   }
 
   async generateResponse(playerMessage: string): Promise<AIResponse> {
+    const startTime = Date.now();
+    console.log('[AI Service] Starting AI response generation', {
+      playerMessage: playerMessage.substring(0, 100),
+      timestamp: new Date().toISOString()
+    });
+
     try {
       // Validate API key exists
       if (!process.env.OPENROUTER_API_KEY) {
-        throw new Error("OPENROUTER_API_KEY environment variable is not set");
+        const error = new Error("OPENROUTER_API_KEY environment variable is not set");
+        console.error('[AI Service] API key missing', { error: error.message });
+        captureError(error, { context: "AI service initialization - missing API key" });
+        throw error;
       }
+
       // Get current game context
+      console.log('[AI Service] Fetching game context');
       const context = await this.getGameContext();
+      console.log('[AI Service] Game context retrieved', {
+        hasCharacter: !!context.character,
+        questCount: context.quests.length,
+        itemCount: context.items.length,
+        messageCount: context.recentMessages.length
+      });
+
       const contextPrompt = this.createContextPrompt(context);
 
       const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -198,7 +216,7 @@ Remember: Keep responses engaging but focused. Always give players clear options
           content: this.getSystemPrompt()
         },
         {
-          role: "user", 
+          role: "user",
           content: `${contextPrompt}
 
 PLAYER ACTION: ${playerMessage}
@@ -252,20 +270,77 @@ Example Quest Actions:
         }
       ];
 
+      console.log('[AI Service] Calling OpenRouter API', {
+        model: "anthropic/claude-3.5-haiku",
+        systemPromptLength: this.getSystemPrompt().length,
+        userPromptLength: messages[1].content?.toString().length || 0
+      });
+
       const response = await openai.chat.completions.create({
         model: "anthropic/claude-3.5-haiku",
         messages,
         response_format: { type: "json_object" },
       });
 
+      const apiDuration = Date.now() - startTime;
+      console.log('[AI Service] API response received', {
+        durationMs: apiDuration,
+        hasChoices: !!response.choices,
+        choicesLength: response.choices?.length || 0,
+        finishReason: response.choices?.[0]?.finish_reason,
+        usage: response.usage
+      });
+
+      // Validate response structure
+      if (!response.choices || response.choices.length === 0) {
+        const error = new Error('OpenRouter API returned no choices');
+        console.error('[AI Service] Invalid API response structure', {
+          response: JSON.stringify(response).substring(0, 500)
+        });
+        captureError(error, {
+          context: "AI API response validation",
+          responseStructure: {
+            hasChoices: !!response.choices,
+            choicesLength: response.choices?.length || 0
+          }
+        });
+        throw error;
+      }
+
+      if (!response.choices[0].message) {
+        const error = new Error('OpenRouter API choice has no message');
+        console.error('[AI Service] Invalid API choice structure', {
+          choice: JSON.stringify(response.choices[0]).substring(0, 500)
+        });
+        captureError(error, {
+          context: "AI API choice validation",
+          finishReason: response.choices[0]?.finish_reason
+        });
+        throw error;
+      }
+
       let aiResponse;
       try {
         const rawContent = response.choices[0].message.content || '{}';
+        console.log('[AI Service] Parsing JSON response', {
+          contentLength: rawContent.length,
+          contentPreview: rawContent.substring(0, 200)
+        });
+
         // Try to parse the JSON, which may contain control characters
         aiResponse = JSON.parse(rawContent);
+        console.log('[AI Service] JSON parsed successfully', {
+          hasSender: !!aiResponse.sender,
+          hasContent: !!aiResponse.content,
+          contentLength: aiResponse.content?.length || 0,
+          hasActions: !!aiResponse.actions
+        });
       } catch (parseError: any) {
         // If JSON parsing fails due to control characters, try to fix it
-        console.error('JSON parse error, attempting to sanitize:', parseError.message);
+        console.error('[AI Service] JSON parse error, attempting to sanitize', {
+          error: parseError.message,
+          position: parseError.message.match(/position (\d+)/)?.[1]
+        });
         const rawContent = response.choices[0].message.content || '{}';
 
         // Sanitize JSON by properly escaping string content
@@ -286,15 +361,22 @@ Example Quest Actions:
 
         try {
           aiResponse = JSON.parse(sanitized);
-        } catch (secondError) {
+          console.log('[AI Service] JSON parsed successfully after sanitization');
+        } catch (secondError: any) {
           // If still failing, log the problematic content and return a fallback response
-          console.error('Failed to parse AI response even after sanitization:', secondError);
-          console.error('Problematic content (first 500 chars):', rawContent.substring(0, 500));
+          console.error('[AI Service] Failed to parse AI response even after sanitization', {
+            originalError: parseError.message,
+            sanitizationError: secondError.message,
+            rawContentPreview: rawContent.substring(0, 500),
+            sanitizedContentPreview: sanitized.substring(0, 500)
+          });
 
           captureError(new Error(`JSON parse failed: ${parseError.message}`), {
-            context: "AI response parsing",
-            rawContent: rawContent.substring(0, 500), // Only log first 500 chars
-            sanitizedContent: sanitized.substring(0, 500)
+            context: "AI response parsing - sanitization failed",
+            rawContent: rawContent.substring(0, 500),
+            sanitizedContent: sanitized.substring(0, 500),
+            originalError: parseError.message,
+            secondError: secondError.message
           });
 
           return {
@@ -307,15 +389,44 @@ Example Quest Actions:
       }
 
       // Validate and sanitize the response
-      return {
+      const finalResponse = {
         content: aiResponse.content || "The DM pauses, considering your words...",
         sender: aiResponse.sender === 'npc' ? 'npc' : 'dm',
         senderName: aiResponse.sender === 'npc' ? aiResponse.senderName : null,
         actions: aiResponse.actions || undefined
       };
 
+      const totalDuration = Date.now() - startTime;
+      console.log('[AI Service] Response generation complete', {
+        totalDurationMs: totalDuration,
+        responseLength: finalResponse.content.length,
+        sender: finalResponse.sender,
+        hasActions: !!finalResponse.actions
+      });
+
+      return finalResponse;
+
     } catch (error: any) {
-      captureError(error as Error, { context: "AI response generation" }); console.error('Error generating AI response:', error);
+      const totalDuration = Date.now() - startTime;
+      console.error('[AI Service] Error generating AI response', {
+        error: error.message,
+        errorType: error.constructor.name,
+        status: error.status,
+        code: error.code,
+        durationMs: totalDuration,
+        stack: error.stack?.split('\n').slice(0, 5).join('\n')
+      });
+
+      captureError(error as Error, {
+        context: "AI response generation - outer catch",
+        errorDetails: {
+          message: error.message,
+          type: error.constructor.name,
+          status: error.status,
+          code: error.code,
+          durationMs: totalDuration
+        }
+      });
       
       // Enhanced error handling based on error type
       let fallbackContent = "";
