@@ -16,6 +16,7 @@ export interface AIResponse {
   content: string;
   sender: 'dm' | 'npc';
   senderName: string | null;
+  error?: 'parse_failure' | 'api_error' | 'network_error'; // Error flag for tracking
   actions?: {
     updateQuest?: { id: string; updates: Partial<Quest> };
     createQuest?: Omit<Quest, 'id'>;
@@ -424,7 +425,8 @@ Example Quest Actions:
             sanitizedContentPreview: sanitized.substring(0, 500)
           });
 
-          captureError(new Error(`JSON parse failed: ${parseError.message}`), {
+          const parseFailureError = new Error(`JSON parse failed: ${parseError.message}`);
+          captureError(parseFailureError, {
             context: "AI response parsing - sanitization failed",
             rawContent: rawContent.substring(0, 500),
             sanitizedContent: sanitized.substring(0, 500),
@@ -432,11 +434,14 @@ Example Quest Actions:
             secondError: secondError.message
           });
 
+          console.error('[AI Service] ⚠️ RETURNING FALLBACK RESPONSE DUE TO PARSE FAILURE');
+
           return {
             content: "The narrator pauses, gathering their thoughts... (There was an issue processing the response. Please try again.)",
             sender: 'dm',
             senderName: null,
-            actions: undefined
+            actions: undefined,
+            error: 'parse_failure' // Flag for frontend to detect this is an error
           };
         }
       }
@@ -483,39 +488,45 @@ Example Quest Actions:
       
       // Enhanced error handling based on error type
       let fallbackContent = "";
-      let shouldRetry = false;
-      
+      let errorType: 'api_error' | 'network_error' = 'api_error';
+
       if (error?.status === 429) {
         // Rate limit exceeded
         fallbackContent = "The magical energies are overwhelmed at the moment. Let me provide guidance based on your current situation...";
+        errorType = 'api_error';
       } else if (error?.status === 401) {
         // API key issue
         fallbackContent = "The connection to the mystical realm is blocked. I'll guide you using my earthly knowledge...";
+        errorType = 'api_error';
       } else if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') {
         // Network issues
         fallbackContent = "The ethereal connection wavers... Let me consult the ancient texts...";
-        shouldRetry = true;
+        errorType = 'network_error';
       } else {
         // Generic error
         fallbackContent = "The DM senses disturbance in the magical weave but continues the adventure...";
+        errorType = 'api_error';
       }
-      
+
+      console.error('[AI Service] ⚠️ RETURNING FALLBACK RESPONSE DUE TO ERROR:', errorType);
+
       // Provide contextual fallback based on player message
-      const contextualResponse = this.generateFallbackResponse(playerMessage, fallbackContent);
-      
+      const contextualResponse = this.generateFallbackResponse(playerMessage, fallbackContent, errorType);
+
       return contextualResponse;
     }
   }
 
-  private generateFallbackResponse(playerMessage: string, errorMessage: string): AIResponse {
+  private generateFallbackResponse(playerMessage: string, errorMessage: string, errorType: 'api_error' | 'network_error' | 'parse_failure'): AIResponse {
     const lowerMessage = playerMessage.toLowerCase();
-    
+
     // Analyze the player's message to provide contextual responses
     if (lowerMessage.includes('attack') || lowerMessage.includes('fight') || lowerMessage.includes('combat')) {
       return {
         content: `${errorMessage} Your aggressive stance is noted. You prepare for combat, weapon at the ready.`,
         sender: 'dm',
         senderName: null,
+        error: errorType,
         actions: {
           updateGameState: { inCombat: true }
         }
@@ -524,32 +535,37 @@ Example Quest Actions:
       return {
         content: `${errorMessage} You carefully examine your surroundings, taking note of every detail.`,
         sender: 'dm',
-        senderName: null
+        senderName: null,
+        error: errorType
       };
     } else if (lowerMessage.includes('talk') || lowerMessage.includes('speak') || lowerMessage.includes('conversation')) {
       return {
         content: `${errorMessage} The NPCs around you seem ready to engage in conversation.`,
         sender: 'dm',
-        senderName: null
+        senderName: null,
+        error: errorType
       };
     } else if (lowerMessage.includes('quest') || lowerMessage.includes('mission') || lowerMessage.includes('task')) {
       return {
         content: `${errorMessage} Your journal reminds you of your current objectives and the path ahead.`,
         sender: 'dm',
-        senderName: null
+        senderName: null,
+        error: errorType
       };
     } else if (lowerMessage.includes('rest') || lowerMessage.includes('sleep') || lowerMessage.includes('heal')) {
       return {
         content: `${errorMessage} You take a moment to rest and recover your strength.`,
         sender: 'dm',
-        senderName: null
+        senderName: null,
+        error: errorType
       };
     } else {
       // Generic helpful response
       return {
         content: `${errorMessage} The adventure continues. What would you like to do next? You can explore, talk to NPCs, check your quests, or engage in combat.`,
         sender: 'dm',
-        senderName: null
+        senderName: null,
+        error: errorType
       };
     }
   }

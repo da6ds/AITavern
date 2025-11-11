@@ -216,6 +216,24 @@ function GameApp() {
           });
         }
 
+        // Automatic error detection: Fallback response (error flag present)
+        if (data.error) {
+          console.error('[App] AI returned fallback response due to error:', data.error);
+          analytics.errorOccurred(`ai_fallback_${data.error}`, `AI fallback: ${data.error}`, {
+            message_preview: message.substring(0, 100),
+            error_type: data.error,
+            response_content: data.content.substring(0, 200)
+          });
+
+          // Also show toast to user
+          toast({
+            title: "AI Response Issue",
+            description: "The narrator had trouble processing your request. Try rephrasing or use the Regenerate button.",
+            variant: "destructive",
+            duration: 5000,
+          });
+        }
+
         analytics.aiResponseReceived(duration, true);
         return data;
       } catch (error: any) {
