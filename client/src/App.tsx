@@ -64,40 +64,6 @@ function GameApp() {
     }
   }, [activeTab, currentView]);
 
-  // Update Sentry context when character data changes
-  useEffect(() => {
-    if (character) {
-      console.log('[App] Updating Sentry user context', {
-        characterId: character.id,
-        characterName: character.name,
-        level: character.level
-      });
-      setUserContext(character.id, {
-        name: character.name,
-        level: character.level,
-        class: character.class
-      });
-    }
-  }, [character]);
-
-  // Update Sentry context when game state changes
-  useEffect(() => {
-    console.log('[App] Updating Sentry game context', {
-      currentView,
-      currentTab: currentView === 'game' ? activeTab : undefined,
-      questCount: quests.length,
-      itemCount: items.length,
-      inCombat: isInCombat
-    });
-    setGameContext({
-      currentView,
-      currentTab: currentView === 'game' ? activeTab : undefined,
-      activeQuestCount: quests.filter(q => q.status === 'active').length,
-      itemCount: items.length,
-      inCombat: isInCombat
-    });
-  }, [currentView, activeTab, quests.length, items.length, isInCombat]);
-  
   // Demo and tooltip functionality
   const {
     isDemoActive,
@@ -114,28 +80,11 @@ function GameApp() {
   // Notification system for badges
   const { hasNotification, markTabAsVisited, addNotification } = useNotifications();
 
-
   // Analytics and session tracking
   const analytics = useAnalytics();
   useSessionTracking();
-  // Check if we should show welcome screen for returning users
 
-  // Track tab changes
-  useEffect(() => {
-    if (currentView === "game") {
-      analytics.trackEvent("tab_view", { tab: activeTab });
-    }
-  }, [activeTab, currentView, analytics]);
-  useEffect(() => {
-    const isNewUser = !demoCompleted && seenTooltips.size === 0;
-    
-    // If user has completed demo or has seen tooltips, skip welcome
-    if (!isNewUser && currentView === "welcome") {
-      setCurrentView("startMenu");
-    }
-  }, [demoCompleted, seenTooltips.size, currentView]);
-  
-  // Fetch real data from backend
+  // Fetch real data from backend - MOVED UP before Sentry useEffects to prevent TDZ errors
   const { data: character, isLoading: characterLoading, error: characterError } = useQuery<Character>({
     queryKey: ['/api/character'],
     retry: 3,
@@ -157,11 +106,11 @@ function GameApp() {
   const { data: gameState } = useQuery<GameState>({
     queryKey: ['/api/game-state'],
   });
-  
+
   // Combat state based on game state
   const isInCombat = gameState?.inCombat || false;
   const currentTurn = gameState?.currentTurn === 'player' ? 'player' : 'enemy';
-  
+
   // Fetch enemies for combat
   const { data: enemies = [] } = useQuery({
     queryKey: ['/api/enemies', gameState?.combatId],
@@ -172,6 +121,61 @@ function GameApp() {
     },
     enabled: isInCombat && !!gameState?.combatId,
   });
+
+  // Update Sentry context when character data changes
+  // MOVED AFTER data declarations to prevent TDZ errors in Safari
+  useEffect(() => {
+    if (character) {
+      console.log('[App] Updating Sentry user context', {
+        characterId: character.id,
+        characterName: character.name,
+        level: character.level
+      });
+      setUserContext(character.id, {
+        name: character.name,
+        level: character.level,
+        class: character.class
+      });
+    }
+  }, [character]);
+
+  // Update Sentry context when game state changes
+  // MOVED AFTER data declarations and added guard clause
+  useEffect(() => {
+    // Guard clause to prevent accessing undefined arrays
+    if (!quests || !items) return;
+
+    console.log('[App] Updating Sentry game context', {
+      currentView,
+      currentTab: currentView === 'game' ? activeTab : undefined,
+      questCount: quests.length,
+      itemCount: items.length,
+      inCombat: isInCombat
+    });
+    setGameContext({
+      currentView,
+      currentTab: currentView === 'game' ? activeTab : undefined,
+      activeQuestCount: quests.filter(q => q.status === 'active').length,
+      itemCount: items.length,
+      inCombat: isInCombat
+    });
+  }, [currentView, activeTab, quests, items, isInCombat]); // Fixed: use full arrays instead of .length
+
+  // Track tab changes
+  useEffect(() => {
+    if (currentView === "game") {
+      analytics.trackEvent("tab_view", { tab: activeTab });
+    }
+  }, [activeTab, currentView, analytics]);
+
+  useEffect(() => {
+    const isNewUser = !demoCompleted && seenTooltips.size === 0;
+
+    // If user has completed demo or has seen tooltips, skip welcome
+    if (!isNewUser && currentView === "welcome") {
+      setCurrentView("startMenu");
+    }
+  }, [demoCompleted, seenTooltips.size, currentView]);
   // AI Chat mutation
   const aiChatMutation = useMutation({
     mutationFn: async (message: string) => {
