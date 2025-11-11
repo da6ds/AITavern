@@ -87,8 +87,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!result.success) {
         return res.status(400).json({ error: "Invalid character data", details: result.error.errors });
       }
-      
+
       const character = await storage.createCharacter(result.data);
+
+      // Auto-generate world from character if appearance and backstory are provided
+      if (character.appearance || character.backstory) {
+        console.log('[Routes] Generating world from character:', character.name);
+
+        try {
+          const worldData = await aiService.generateWorldFromCharacter({
+            name: character.name,
+            appearance: character.appearance,
+            backstory: character.backstory,
+            class: character.class,
+          });
+
+          // Update game state with generated world
+          const gameState = await storage.getGameState();
+          if (gameState) {
+            await storage.updateGameState({
+              worldSetting: worldData.worldSetting,
+              worldTheme: worldData.worldTheme,
+              worldDescription: worldData.worldDescription,
+              currentScene: worldData.initialScene,
+              generatedFromCharacter: true,
+            });
+          }
+
+          // Clear existing quests and create the initial quest from world generation
+          await storage.clearQuests();
+          await storage.createQuest({
+            title: worldData.initialQuest.title,
+            description: worldData.initialQuest.description,
+            status: 'active',
+            priority: 'high',
+            progress: 0,
+            maxProgress: 3,
+            isMainStory: true,
+          });
+
+          // Clear existing items and add world-specific starting items
+          const currentItems = await storage.getItems();
+          for (const item of currentItems) {
+            await storage.deleteItem(item.id);
+          }
+
+          for (const item of worldData.startingItems) {
+            await storage.createItem({
+              ...item,
+              quantity: 1,
+              rarity: 'common',
+              equipped: item.type === 'weapon' || item.type === 'armor',
+            });
+          }
+
+          // Clear messages and add welcome message
+          await storage.clearMessages();
+          await storage.createMessage({
+            content: `Welcome to ${worldData.worldSetting}! ${worldData.worldDescription}\n\nYou find yourself in ${worldData.initialScene}.\n\n${worldData.initialQuest.description}\n\n**What do you do?**`,
+            sender: 'dm',
+            senderName: null,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          });
+
+          console.log('[Routes] World generation complete:', worldData.worldSetting);
+
+        } catch (worldGenError) {
+          console.error('[Routes] Error generating world, using defaults:', worldGenError);
+          // Continue with character creation even if world generation fails
+        }
+      }
+
       res.json(character);
     } catch (error) {
       console.error('Error creating character:', error);

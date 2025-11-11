@@ -176,6 +176,10 @@ export class MemStorage implements IStorage {
         currentTurn: null,
         combatId: null,
         turnCount: 0,
+        worldSetting: null,
+        worldTheme: null,
+        worldDescription: null,
+        generatedFromCharacter: false,
       };
     }
 
@@ -231,6 +235,9 @@ You've traveled far to reach this place, drawn by rumors that have spread throug
       class: character.class,
       level: character.level ?? 1,
       experience: character.experience ?? 0,
+      appearance: character.appearance ?? null,
+      backstory: character.backstory ?? null,
+      race: character.race ?? "Unknown",
       strength: character.strength ?? 10,
       dexterity: character.dexterity ?? 10,
       constitution: character.constitution ?? 10,
@@ -540,6 +547,10 @@ You've traveled far to reach this place, drawn by rumors that have spread throug
       currentTurn: state.currentTurn ?? null,
       combatId: state.combatId ?? null,
       turnCount: state.turnCount ?? 0,
+      worldSetting: state.worldSetting ?? null,
+      worldTheme: state.worldTheme ?? null,
+      worldDescription: state.worldDescription ?? null,
+      generatedFromCharacter: state.generatedFromCharacter ?? false,
     };
     this.gameState = newGameState;
     return this.gameState;

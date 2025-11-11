@@ -31,22 +31,33 @@ export interface AIResponse {
 }
 
 export class TTRPGAIService {
-  private getSystemPrompt(): string {
-    return `You are an experienced Dungeon Master running an immersive D&D-style fantasy TTRPG.
+  private getSystemPrompt(gameState?: GameState): string {
+    // Use custom world if generated from character, otherwise use default fantasy
+    const worldSetting = gameState?.worldSetting || "a classic dark fantasy realm";
+    const worldTheme = gameState?.worldTheme || "Dark fantasy with mystery and adventure";
+    const worldDescription = gameState?.worldDescription || "A medieval fantasy world with magic, monsters, and intrigue where heroes forge their own legends";
+
+    return `You are an experienced Narrator running an immersive story-driven TTRPG.
 
 CORE ROLE:
-- Act as both the DM and all NPCs the player encounters
+- Act as both the Narrator and all characters the player encounters
 - Create engaging, immersive storylines with rich world-building
 - Respond to player actions with appropriate consequences
 - Maintain game balance and progression
 - Generate dynamic quests and adventures
 
 GAME WORLD:
-- Dark fantasy setting with mystery and adventure
-- Medieval fantasy with magic, monsters, and intrigue
+${worldDescription}
+
+WORLD THEME: ${worldTheme}
+SETTING: ${worldSetting}
+
+IMPORTANT: Stay true to this world's unique vibe and tone in ALL responses. Every NPC, location, quest, and item should feel authentic to this setting.
+
+NARRATIVE GUIDELINES:
 - Rich, descriptive environments that paint vivid mental pictures
-- Diverse NPCs with distinct personalities, motivations, and secrets
-- Atmospheric details: weather, sounds, smells, lighting
+- Diverse characters with distinct personalities, motivations, and secrets
+- Atmospheric details: weather, sounds, smells, lighting - all matching the world's theme
 
 NARRATIVE STRUCTURE - VERY IMPORTANT:
 Every response MUST follow this structure:
@@ -138,9 +149,21 @@ Remember: Keep responses engaging but focused. Always give players clear options
 
     let prompt = "CURRENT GAME STATE:\\n\\n";
 
-    // Character info
+    // World context
+    if (gameState?.worldSetting) {
+      prompt += `WORLD: ${gameState.worldSetting}\\n`;
+      prompt += `THEME: ${gameState.worldTheme}\\n\\n`;
+    }
+
+    // Character info with narrative context
     if (character) {
       prompt += `CHARACTER: ${character.name}, Level ${character.level} ${character.class}\\n`;
+      if (character.appearance) {
+        prompt += `Description: ${character.appearance}\\n`;
+      }
+      if (character.backstory) {
+        prompt += `Backstory: ${character.backstory}\\n`;
+      }
       prompt += `HP: ${character.currentHealth}/${character.maxHealth}, Mana: ${character.currentMana}/${character.maxMana}\\n`;
       prompt += `Stats: STR ${character.strength}, DEX ${character.dexterity}, CON ${character.constitution}, INT ${character.intelligence}, WIS ${character.wisdom}, CHA ${character.charisma}\\n\\n`;
     }
@@ -247,7 +270,7 @@ Remember: Keep responses engaging but focused. Always give players clear options
       const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
         {
           role: "system",
-          content: this.getSystemPrompt()
+          content: this.getSystemPrompt(context.gameState)
         },
         {
           role: "user",
@@ -314,13 +337,13 @@ Example Quest Actions:
 
       console.log('[AI Service] Calling OpenRouter API', {
         model: "anthropic/claude-3.5-haiku",
-        systemPromptLength: this.getSystemPrompt().length,
+        systemPromptLength: this.getSystemPrompt(context.gameState).length,
         userPromptLength: messages[1].content?.toString().length || 0
       });
 
       // Log full prompts for debugging (truncated for readability)
       console.log('[AI Service] === RAW PROMPT (System) ===');
-      console.log(this.getSystemPrompt().substring(0, 500) + '...');
+      console.log(this.getSystemPrompt(context.gameState).substring(0, 500) + '...');
       console.log('[AI Service] === RAW PROMPT (User) ===');
       console.log(messages[1].content?.toString().substring(0, 1000) + '...');
       console.log('[AI Service] === END RAW PROMPTS ===');
@@ -824,6 +847,111 @@ Respond as ${npcName} would, staying true to their character and the situation.`
     } catch (error) {
       captureError(error as Error, { context: "NPC dialogue generation" }); console.error('Error generating NPC dialogue:', error);
       return "The NPC seems distracted and doesn't respond.";
+    }
+  }
+
+  async generateWorldFromCharacter(character: {
+    name: string;
+    appearance?: string | null;
+    backstory?: string | null;
+    class?: string;
+  }): Promise<{
+    worldSetting: string;
+    worldTheme: string;
+    worldDescription: string;
+    initialScene: string;
+    initialQuest: { title: string; description: string };
+    startingItems: Array<{ name: string; type: string; description: string }>;
+  }> {
+    try {
+      const characterDesc = character.appearance || "a mysterious adventurer";
+      const characterStory = character.backstory || "seeking their destiny";
+
+      const prompt = `Based on this character, create a unique and coherent game world that matches their vibe and story:
+
+CHARACTER:
+- Name: ${character.name}
+- Description: ${characterDesc}
+- Backstory: ${characterStory}
+- Class: ${character.class || "Adventurer"}
+
+TASK: Generate a complete world setting that feels authentic to this character. If they're a "ball of lint trying to find their lint family," create a whimsical lint universe with fabric creatures and dryer vent dungeons. If they're a dark knight, create a grim gothic world. Match the tone perfectly.
+
+Respond in this EXACT JSON format (no other text):
+{
+  "worldSetting": "short name for this world (e.g., 'The Lint Universe', 'Kingdom of Shadows')",
+  "worldTheme": "1-2 sentence tone/genre description",
+  "worldDescription": "3-4 sentences describing the world, its inhabitants, magic system, and atmosphere - make it vivid and specific to the character's vibe",
+  "initialScene": "where the character starts their journey (specific location name and brief description)",
+  "initialQuest": {
+    "title": "engaging quest title",
+    "description": "2-3 sentences describing the first quest, tied to their backstory"
+  },
+  "startingItems": [
+    {"name": "item name", "type": "weapon|armor|consumable|misc", "description": "what it does"},
+    {"name": "item name", "type": "weapon|armor|consumable|misc", "description": "what it does"},
+    {"name": "item name", "type": "weapon|armor|consumable|misc", "description": "what it does"}
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "anthropic/claude-3.5-haiku",
+        messages: [
+          {
+            role: "system",
+            content: "You are a creative world-building expert. Generate immersive, coherent game worlds that perfectly match character concepts. Always respond with valid JSON only."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.9, // Higher creativity for world generation
+      });
+
+      const content = response.choices[0].message.content || "";
+
+      // Parse the JSON response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON found in AI response");
+      }
+
+      const worldData = JSON.parse(jsonMatch[0]);
+
+      // Validate required fields
+      if (!worldData.worldSetting || !worldData.worldTheme || !worldData.worldDescription ||
+          !worldData.initialScene || !worldData.initialQuest || !worldData.startingItems) {
+        throw new Error("Missing required fields in world generation response");
+      }
+
+      console.log('[AI Service] Generated world from character:', {
+        character: character.name,
+        worldSetting: worldData.worldSetting,
+      });
+
+      return worldData;
+
+    } catch (error: any) {
+      captureError(error as Error, { context: "World generation from character" });
+      console.error('[AI Service] Error generating world from character:', error);
+
+      // Return a fallback generic fantasy world
+      return {
+        worldSetting: "The Realm of Adventures",
+        worldTheme: "Classic fantasy with mystery and adventure",
+        worldDescription: "A vast realm where magic and steel clash, ancient ruins hold forgotten secrets, and heroes rise to face the darkness. The land is dotted with medieval towns, dark forests, and mysterious dungeons waiting to be explored.",
+        initialScene: "A bustling medieval village at the crossroads of adventure",
+        initialQuest: {
+          title: "Begin Your Journey",
+          description: "Explore this new world and discover your destiny. The village elder has mentioned strange occurrences in the nearby forest that need investigation."
+        },
+        startingItems: [
+          { name: "Sturdy Weapon", type: "weapon", description: "A reliable weapon for your adventures" },
+          { name: "Leather Armor", type: "armor", description: "Basic protection from harm" },
+          { name: "Health Potion", type: "consumable", description: "Restores vitality when needed" }
+        ]
+      };
     }
   }
 

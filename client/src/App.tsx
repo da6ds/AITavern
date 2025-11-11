@@ -19,6 +19,8 @@ import WelcomeScreen from "./components/WelcomeScreen";
 import DemoTooltip from "./components/DemoTooltip";
 import ThemeToggle from "./components/ThemeToggle";
 import CharacterCreation from "./components/CharacterCreation";
+import SimpleCharacterCreation from "./components/SimpleCharacterCreation";
+import WorldGeneration from "./components/WorldGeneration";
 import AdventureTemplates from "./components/AdventureTemplates";
 import ColdStartLoader from "./components/ColdStartLoader";
 import { useTooltips } from "./hooks/useTooltips";
@@ -37,6 +39,9 @@ function GameApp() {
   const [currentView, setCurrentView] = useState<ViewType>("welcome");
   const [activeTab, setActiveTab] = useState<TabType>("character");
   const [isListening, setIsListening] = useState(false);
+  const [isGeneratingWorld, setIsGeneratingWorld] = useState(false);
+  const [worldGenerationComplete, setWorldGenerationComplete] = useState(false);
+  const [characterName, setCharacterName] = useState("");
 
   // Track view changes (welcome, menu, game, etc)
   useEffect(() => {
@@ -64,6 +69,22 @@ function GameApp() {
       analytics.screenViewed(screenNames[activeTab], { tab: activeTab });
     }
   }, [activeTab, currentView]);
+
+  // Watch for world generation completion
+  useEffect(() => {
+    if (worldGenerationComplete && isGeneratingWorld) {
+      console.log('[App] World generation complete, transitioning to game');
+      setIsGeneratingWorld(false);
+      setWorldGenerationComplete(false);
+      // Invalidate queries to fetch the newly generated world
+      queryClient.invalidateQueries({ queryKey: ['/api/character'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/game-state'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/quests'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
+      setCurrentView("game");
+    }
+  }, [worldGenerationComplete, isGeneratingWorld]);
 
   // Demo and tooltip functionality
   const {
@@ -558,11 +579,63 @@ function GameApp() {
   }
 
   if (currentView === "characterCreation") {
+    // Show world generation loading screen if generating
+    if (isGeneratingWorld) {
+      return (
+        <WorldGeneration
+          characterName={characterName}
+          onComplete={() => {
+            // This is called by the loading screen component
+            // But we'll actually complete when the API finishes
+          }}
+        />
+      );
+    }
+
+    // Show simplified character creation form
     return (
-      <CharacterCreation 
-        onComplete={(characterData) => {
-          console.log('Character created:', characterData);
-          setCurrentView("game");
+      <SimpleCharacterCreation
+        onComplete={async (characterData) => {
+          console.log('[App] Character data submitted:', characterData);
+          setCharacterName(characterData.name);
+          setIsGeneratingWorld(true);
+          setWorldGenerationComplete(false);
+
+          try {
+            // Create character with appearance and backstory
+            // Backend will auto-generate world and initialize game
+            console.log('[App] Creating character and generating world...');
+            await apiRequest('POST', '/api/character', {
+              name: characterData.name,
+              class: 'Adventurer',
+              level: 1,
+              experience: 0,
+              appearance: characterData.description,
+              backstory: characterData.backstory,
+              strength: 10,
+              dexterity: 10,
+              constitution: 10,
+              intelligence: 10,
+              wisdom: 10,
+              charisma: 10,
+              currentHealth: 10,
+              maxHealth: 10,
+              currentMana: 0,
+              maxMana: 0,
+            });
+
+            console.log('[App] Character created and world generated successfully!');
+            // Mark world generation as complete
+            setWorldGenerationComplete(true);
+          } catch (error) {
+            console.error('[App] Error creating character:', error);
+            setIsGeneratingWorld(false);
+            toast({
+              title: "Error Creating Character",
+              description: "Failed to generate your world. Please try again.",
+              variant: "destructive",
+            });
+          }
         }}
         onBack={() => setCurrentView("startMenu")}
       />

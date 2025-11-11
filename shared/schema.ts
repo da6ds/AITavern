@@ -10,7 +10,12 @@ export const characters = pgTable("characters", {
   class: text("class").notNull(),
   level: integer("level").default(1).notNull(),
   experience: integer("experience").default(0).notNull(),
-  
+
+  // Character Narrative (for world generation)
+  appearance: text("appearance"),
+  backstory: text("backstory"),
+  race: text("race").default("Unknown"),
+
   // Core D&D Stats
   strength: integer("strength").default(10).notNull(),
   dexterity: integer("dexterity").default(10).notNull(),
@@ -18,7 +23,7 @@ export const characters = pgTable("characters", {
   intelligence: integer("intelligence").default(10).notNull(),
   wisdom: integer("wisdom").default(10).notNull(),
   charisma: integer("charisma").default(10).notNull(),
-  
+
   // Health and Resources
   currentHealth: integer("current_health").notNull(),
   maxHealth: integer("max_health").notNull(),
@@ -95,6 +100,12 @@ export const gameState = pgTable("game_state", {
   currentTurn: text("current_turn"),
   combatId: varchar("combat_id"), // Current combat encounter
   turnCount: integer("turn_count").default(0).notNull(),
+
+  // World Context (generated from character)
+  worldSetting: text("world_setting"), // "Lint Universe", "Dark Fantasy", etc.
+  worldTheme: text("world_theme"), // Tone/genre description
+  worldDescription: text("world_description"), // AI-generated world summary
+  generatedFromCharacter: boolean("generated_from_character").default(false).notNull(),
 });
 
 // Create schemas
