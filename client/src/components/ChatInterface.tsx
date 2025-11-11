@@ -447,7 +447,7 @@ ${JSON.stringify(debugInfo, null, 2)}
                       handleSend();
                     }
                   }}
-                  className="flex-1 px-3 py-2.5 bg-muted rounded-md text-sm sm:text-base text-foreground placeholder:text-muted-foreground border-none focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
+                  className="flex-1 px-3 py-2.5 bg-muted rounded-md text-sm sm:text-base text-foreground placeholder:text-muted-foreground border border-input focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
                   disabled={isListening || isLoading}
                   data-testid="input-chat-message"
                 />
