@@ -189,6 +189,25 @@ function GameApp() {
           hasContent: !!data.content
         });
 
+        // Automatic error detection: Slow response
+        if (duration > 10000) {
+          console.warn('[App] Slow AI response detected:', duration, 'ms');
+          analytics.trackEvent('ai_response_slow', {
+            duration_ms: duration,
+            threshold_ms: 10000,
+            message_preview: message.substring(0, 100)
+          });
+        }
+
+        // Automatic error detection: Empty or missing content
+        if (!data.content || data.content.trim().length === 0) {
+          console.error('[App] AI response has no content');
+          analytics.errorOccurred('ai_response_empty', 'AI returned empty content', {
+            message_preview: message.substring(0, 100),
+            response_keys: Object.keys(data)
+          });
+        }
+
         analytics.aiResponseReceived(duration, true);
         return data;
       } catch (error: any) {

@@ -4,11 +4,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "./PageHeader";
 import EmptyState from "./EmptyState";
-import { Mic, MicOff, Send, MessageSquare, Loader2, XCircle, Bug } from "lucide-react";
+import { Mic, MicOff, Send, MessageSquare, Loader2, XCircle, Bug, AlertCircle, RefreshCw } from "lucide-react";
 import type { Message, Character, Quest, Item, GameState } from "@shared/schema";
 import { useState, useRef, useEffect } from "react";
 import { analytics } from "@/lib/posthog";
 import { useToast } from "@/hooks/use-toast";
+import { captureError, addBreadcrumb } from "@/lib/sentry";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -180,7 +181,96 @@ ${JSON.stringify(debugInfo, null, 2)}
       console.log('[ChatInterface] Debug info (manual copy):', debugText);
     });
   };
-  
+
+  const handleReportIssue = () => {
+    console.log('[ChatInterface] Report Issue button clicked');
+    analytics.buttonClicked('Report Issue', 'Chat Interface');
+
+    // Capture comprehensive debug info for Sentry
+    const issueContext = {
+      character: character ? {
+        id: character.id,
+        name: character.name,
+        level: character.level,
+        class: character.class,
+        health: `${character.currentHealth}/${character.maxHealth}`
+      } : null,
+      gameState: gameState ? {
+        scene: gameState.currentScene,
+        inCombat: gameState.inCombat,
+        combatId: gameState.combatId
+      } : null,
+      questCount: quests.length,
+      activeQuestCount: quests.filter(q => q.status === 'active').length,
+      itemCount: items.length,
+      messageCount: messages.length,
+      recentMessages: messages.slice(-10).map(m => ({
+        id: m.id,
+        sender: m.sender,
+        content: m.content.substring(0, 200),
+        timestamp: m.timestamp
+      }))
+    };
+
+    // Add breadcrumb trail
+    addBreadcrumb('User reported issue from chat', {
+      messageCount: messages.length,
+      lastMessageSender: messages[messages.length - 1]?.sender
+    });
+
+    // Capture as error in Sentry
+    const error = new Error('User reported chat issue');
+    error.name = 'UserReportedIssue';
+    captureError(error, {
+      context: "User-reported issue from ChatInterface",
+      ...issueContext
+    });
+
+    console.log('[ChatInterface] Issue reported to Sentry with context:', issueContext);
+
+    toast({
+      title: "Issue reported!",
+      description: "Thank you! We've captured your game state for investigation.",
+      duration: 4000,
+    });
+  };
+
+  const handleRegenerateResponse = () => {
+    console.log('[ChatInterface] Regenerate Response button clicked');
+    analytics.buttonClicked('Regenerate Response', 'Chat Interface', {
+      messageCount: messages.length,
+      lastMessageId: messages[messages.length - 1]?.id
+    });
+
+    // Get the last player message to re-send
+    const lastPlayerMessage = [...messages].reverse().find(m => m.sender === 'player');
+
+    if (lastPlayerMessage) {
+      console.log('[ChatInterface] Re-sending last player message:', lastPlayerMessage.content.substring(0, 100));
+      analytics.trackEvent('ai_response_regenerated', {
+        original_message_id: messages[messages.length - 1]?.id,
+        player_message: lastPlayerMessage.content.substring(0, 100)
+      });
+
+      // Re-send the message to get a new AI response
+      onSendMessage?.(lastPlayerMessage.content);
+
+      toast({
+        title: "Regenerating response...",
+        description: "Asking the narrator for a different response.",
+        duration: 2000,
+      });
+    } else {
+      console.warn('[ChatInterface] No player message found to regenerate');
+      toast({
+        title: "Can't regenerate",
+        description: "No player message found to regenerate from.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   const getSenderBadge = (sender: string, senderName?: string | null) => {
     switch (sender) {
       case "dm":
@@ -211,6 +301,16 @@ ${JSON.stringify(debugInfo, null, 2)}
             <Bug className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Copy Debug Info</span>
             <span className="sm:hidden">Debug</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReportIssue}
+            className="flex-1 sm:flex-none"
+          >
+            <AlertCircle className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Report Issue</span>
+            <span className="sm:hidden">Report</span>
           </Button>
           <Button
             variant="destructive"
@@ -293,6 +393,21 @@ ${JSON.stringify(debugInfo, null, 2)}
                 <div className="flex items-center gap-2 p-2.5 sm:p-3 rounded-lg bg-muted/50 animate-pulse">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <p className="text-sm text-muted-foreground">Your narrator is thinking...</p>
+                </div>
+              )}
+
+              {/* Regenerate Response Button (after AI response, when not loading) */}
+              {!isLoading && messages.length > 0 && messages[messages.length - 1].sender !== 'player' && (
+                <div className="flex justify-center mt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRegenerateResponse}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Regenerate response
+                  </Button>
                 </div>
               )}
             </div>
