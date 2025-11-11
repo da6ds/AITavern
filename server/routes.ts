@@ -852,6 +852,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // PHASE 3: Detect side quest opportunities
+      try {
+        const character = await storage.getCharacter();
+        const quests = await storage.getQuests();
+        const recentMessages = await storage.getRecentMessages(10);
+        const gameState = await storage.getGameState();
+
+        const shouldGenerateSideQuest = await aiService.detectSideQuestOpportunity(message, {
+          character,
+          quests,
+          recentMessages,
+          gameState
+        });
+
+        if (shouldGenerateSideQuest) {
+          console.log('[Routes] Side quest opportunity detected, generating side quest');
+
+          const sideQuest = await aiService.generateSideQuest(message, {
+            character,
+            gameState,
+            recentMessages
+          });
+
+          if (sideQuest) {
+            const questValidation = insertQuestSchema.safeParse(sideQuest);
+            if (questValidation.success) {
+              await storage.createQuest(questValidation.data);
+              console.log('[Routes] Side quest created:', sideQuest.title);
+            } else {
+              console.warn('[Routes] Invalid side quest data:', questValidation.error.errors);
+            }
+          }
+        }
+      } catch (sideQuestError) {
+        // Don't fail the entire request if side quest generation fails
+        console.warn('[Routes] Side quest generation failed (non-critical):', sideQuestError);
+      }
+
       res.json({
         message: aiMessage,
         actions: aiResponse.actions
@@ -1001,6 +1039,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.warn('Invalid AI item creation:', itemValidation.error.errors);
           }
         }
+      }
+
+      // PHASE 3: Detect side quest opportunities
+      try {
+        const character = await storage.getCharacter();
+        const quests = await storage.getQuests();
+        const recentMessages = await storage.getRecentMessages(10);
+        const gameState = await storage.getGameState();
+
+        const shouldGenerateSideQuest = await aiService.detectSideQuestOpportunity(actionMessage, {
+          character,
+          quests,
+          recentMessages,
+          gameState
+        });
+
+        if (shouldGenerateSideQuest) {
+          console.log('[Routes] Side quest opportunity detected in quick action, generating side quest');
+
+          const sideQuest = await aiService.generateSideQuest(actionMessage, {
+            character,
+            gameState,
+            recentMessages
+          });
+
+          if (sideQuest) {
+            const questValidation = insertQuestSchema.safeParse(sideQuest);
+            if (questValidation.success) {
+              await storage.createQuest(questValidation.data);
+              console.log('[Routes] Side quest created from quick action:', sideQuest.title);
+            } else {
+              console.warn('[Routes] Invalid side quest data:', questValidation.error.errors);
+            }
+          }
+        }
+      } catch (sideQuestError) {
+        // Don't fail the entire request if side quest generation fails
+        console.warn('[Routes] Side quest generation failed (non-critical):', sideQuestError);
       }
 
       res.json({

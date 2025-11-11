@@ -24,6 +24,7 @@ import ColdStartLoader from "./components/ColdStartLoader";
 import { useTooltips } from "./hooks/useTooltips";
 import { useAnalytics, useSessionTracking } from "./hooks/useAnalytics";
 import { useNotifications } from "./hooks/useNotifications";
+import { useToast } from "./hooks/use-toast";
 import { setUserContext, setGameContext } from "./lib/sentry";
 
 // Types
@@ -79,6 +80,9 @@ function GameApp() {
 
   // Notification system for badges
   const { hasNotification, markTabAsVisited, addNotification } = useNotifications();
+
+  // Toast notifications
+  const { toast } = useToast();
 
   // Analytics and session tracking
   const analytics = useAnalytics();
@@ -229,7 +233,36 @@ function GameApp() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Check if quest was updated and show toast notification
+      if (data.actions?.updateQuest) {
+        const updatedQuestId = data.actions.updateQuest.id;
+        const updatedQuestData = data.actions.updateQuest.updates;
+
+        // Find the quest in current quests to get its title
+        const quest = quests.find(q => q.id === updatedQuestId);
+
+        if (quest) {
+          // Check if quest was completed (status changed to completed OR progress reached maxProgress)
+          const wasCompleted =
+            updatedQuestData.status === 'completed' ||
+            (updatedQuestData.progress !== undefined && updatedQuestData.progress >= quest.maxProgress);
+
+          console.log('[App] Quest update detected', {
+            questId: updatedQuestId,
+            questTitle: quest.title,
+            wasCompleted,
+            newProgress: updatedQuestData.progress
+          });
+
+          toast({
+            title: wasCompleted ? "Quest Complete! 🎉" : "Quest Updated",
+            description: quest.title,
+            duration: 3000,
+          });
+        }
+      }
+
       // Refetch all data after AI response
       console.log('[App] AI response successful, refreshing data');
       analytics.messageSent("chat");

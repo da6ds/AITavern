@@ -69,22 +69,27 @@ Every response MUST follow this structure:
    • Option 3: [Clear, specific action]
    • Option 4: [Optional - creative/risky action]
 
-QUEST INTEGRATION - CRITICAL:
-- ALWAYS check if player actions relate to active quests
-- Update quest progress when objectives are completed
-- Create new quests from significant story events or NPC requests
-- Mark quests as completed when all objectives are met
-- Generate follow-up quests for completed main story quests
-- Track relationships between quests (quest chains)
+QUEST TRACKING PROTOCOL - MANDATORY:
+YOU MUST check EVERY SINGLE player action against ALL active quests. This is NON-NEGOTIABLE.
 
-QUEST PROGRESSION RULES:
-When player actions relate to a quest:
-1. Identify which active quest(s) are affected
-2. Update quest progress appropriately
-3. If progress reaches maxProgress, set status to "completed"
-4. If quest is failed, set status to "failed"
-5. Create follow-up quests when main story quests complete
+Before EVERY response:
+1. Review ALL active quests (even if they seem unrelated)
+2. Be GENEROUS with progress - if action is remotely related, give credit
+3. Don't require exact matches - interpret player intent
+4. If a quest is stuck at 0 progress for 3+ player actions, advance it anyway
+
+QUEST PROGRESSION RULES (ENFORCED):
+For EVERY player action that relates to ANY quest:
+1. MUST include updateQuest in actions object
+2. Increment progress by 1 (or more if major milestone)
+3. If progress >= maxProgress, set status to "completed"
+4. Award experience when updating progress
+5. Generate follow-up quests when main story quests complete
 6. Update quest descriptions if new information is revealed
+
+ANTI-STUCK RULE:
+If you notice a quest has been at the same progress for multiple turns, FORCE progress.
+Better to advance too generously than leave players feeling stuck.
 
 COMBAT MANAGEMENT:
 - Handle turn-based combat with strategic AI enemy behavior
@@ -139,12 +144,33 @@ Remember: Keep responses engaging but focused. Always give players clear options
       prompt += `Stats: STR ${character.strength}, DEX ${character.dexterity}, CON ${character.constitution}, INT ${character.intelligence}, WIS ${character.wisdom}, CHA ${character.charisma}\\n\\n`;
     }
 
-    // Active quests
+    // Active quests with advancement hints
     const activeQuests = quests.filter(q => q.status === 'active');
     if (activeQuests.length > 0) {
-      prompt += "ACTIVE QUESTS:\\n";
+      prompt += "ACTIVE QUESTS (CHECK EVERY ACTION AGAINST THESE):\\n";
       activeQuests.forEach(quest => {
         prompt += `- ${quest.title}: ${quest.description} (${quest.progress}/${quest.maxProgress})\\n`;
+
+        // Add advancement hints
+        if (quest.progress === 0) {
+          prompt += `  ⚠️ WARNING: Quest stuck at 0 progress - be EXTRA generous with advancement\\n`;
+        }
+
+        // Provide contextual hints based on quest type and progress
+        if (quest.isMainStory) {
+          prompt += `  📌 MAIN QUEST: Prioritize progress - any story action likely advances this\\n`;
+        }
+
+        // Suggest what kinds of actions might advance this quest
+        if (quest.description.toLowerCase().includes('find') || quest.description.toLowerCase().includes('search')) {
+          prompt += `  💡 HINT: Investigating, searching, talking to NPCs should advance this\\n`;
+        } else if (quest.description.toLowerCase().includes('talk') || quest.description.toLowerCase().includes('speak')) {
+          prompt += `  💡 HINT: Any conversation or dialogue should advance this\\n`;
+        } else if (quest.description.toLowerCase().includes('defeat') || quest.description.toLowerCase().includes('kill')) {
+          prompt += `  💡 HINT: Combat actions should advance this\\n`;
+        } else {
+          prompt += `  💡 HINT: Be creative - many player actions can reasonably advance this\\n`;
+        }
       });
       prompt += "\\n";
     }
@@ -269,11 +295,19 @@ QUEST TRACKING - CRITICAL:
 - Create new quests when story events warrant them
 - Update quest descriptions if new information is learned
 
+QUEST DESCRIPTION GUIDELINES (IMPORTANT):
+When creating new quests:
+- START VAGUE: "Investigate the disappearances" NOT "Talk to elder, search forest, find clues"
+- Let player DISCOVER how to progress through experimentation
+- Update description as quest advances to reflect new information
+- Don't pre-reveal all steps - maintain mystery and discovery
+- Focus on WHAT needs doing, not HOW to do it
+
 Example Quest Actions:
 - Player talks to NPC about quest → update progress +1
 - Player finds quest item → update progress +1, giveItem
 - Player completes all objectives → progress = maxProgress, status = "completed", award XP
-- NPC gives new quest → createQuest with clear objectives`
+- NPC gives new quest → createQuest with vague, discovery-focused description`
         }
       ];
 
@@ -536,10 +570,10 @@ Example Quest Actions:
             role: "user",
             content: `The player just completed: "${completedQuest.title}"
             Description: ${completedQuest.description}
-            
+
             Player Level: ${context.character?.level || 1}
             Current Scene: ${context.gameState?.currentScene || "Unknown"}
-            
+
             Create a natural follow-up quest that continues this storyline. Format as JSON:
             {
               "title": "Quest Title",
@@ -557,9 +591,151 @@ Example Quest Actions:
 
       const result = JSON.parse(response.choices[0].message.content || '{}');
       return result.title ? result : null;
-      
+
     } catch (error) {
       captureError(error as Error, { context: "Follow-up quest generation" }); console.error('Error generating follow-up quest:', error);
+      return null;
+    }
+  }
+
+  async detectSideQuestOpportunity(
+    playerMessage: string,
+    context: {
+      character: Character | undefined;
+      quests: Quest[];
+      recentMessages: Message[];
+      gameState: GameState | undefined;
+    }
+  ): Promise<boolean> {
+    try {
+      // Quick heuristic checks before making AI call to save costs
+      const lowerMessage = playerMessage.toLowerCase();
+
+      // Check for NPC interaction keywords
+      const npcInteractionKeywords = ['talk', 'speak', 'ask', 'tell', 'greet', 'conversation', 'chat'];
+      const hasNPCInteraction = npcInteractionKeywords.some(keyword => lowerMessage.includes(keyword));
+
+      // Check for discovery/investigation keywords
+      const discoveryKeywords = ['search', 'investigate', 'examine', 'look', 'find', 'discover', 'explore'];
+      const hasDiscovery = discoveryKeywords.some(keyword => lowerMessage.includes(keyword));
+
+      // Check for interesting story hooks
+      const storyHookKeywords = ['help', 'problem', 'trouble', 'mission', 'task', 'favor', 'need'];
+      const hasStoryHook = storyHookKeywords.some(keyword => lowerMessage.includes(keyword));
+
+      // Check recent messages for NPC dialogue
+      const recentNPCMessages = context.recentMessages.slice(-5).filter(m => m.sender === 'npc' || m.sender === 'dm');
+      const hasRecentNPCDialogue = recentNPCMessages.length > 0;
+
+      // Don't create side quests if too many active quests already (max 5 active total)
+      const activeQuestCount = context.quests.filter(q => q.status === 'active').length;
+      if (activeQuestCount >= 5) {
+        console.log('[AI Service] Side quest opportunity rejected: too many active quests', { activeQuestCount });
+        return false;
+      }
+
+      // Heuristic decision: if strong signals present, return true
+      if ((hasNPCInteraction || hasDiscovery) && (hasStoryHook || hasRecentNPCDialogue)) {
+        console.log('[AI Service] Side quest opportunity detected via heuristics', {
+          hasNPCInteraction,
+          hasDiscovery,
+          hasStoryHook,
+          hasRecentNPCDialogue
+        });
+        return true;
+      }
+
+      // No clear opportunity
+      return false;
+
+    } catch (error) {
+      console.error('[AI Service] Error detecting side quest opportunity:', error);
+      captureError(error as Error, { context: "Side quest opportunity detection" });
+      return false;
+    }
+  }
+
+  async generateSideQuest(
+    playerMessage: string,
+    context: {
+      character: Character | undefined;
+      gameState: GameState | undefined;
+      recentMessages: Message[];
+    }
+  ): Promise<Omit<Quest, 'id'> | null> {
+    try {
+      // Get conversation context
+      const conversationContext = context.recentMessages.slice(-5).map(m => {
+        const speaker = m.sender === 'dm' ? 'DM' : m.sender === 'npc' ? (m.senderName || 'NPC') : 'Player';
+        return `${speaker}: ${m.content}`;
+      }).join('\\n');
+
+      const response = await openai.chat.completions.create({
+        model: "anthropic/claude-3.5-haiku",
+        messages: [
+          {
+            role: "system",
+            content: "You are a D&D Dungeon Master creating engaging side quests from player interactions and discoveries."
+          },
+          {
+            role: "user",
+            content: `Recent conversation:
+${conversationContext}
+
+Player's latest action: "${playerMessage}"
+
+Player Level: ${context.character?.level || 1}
+Current Scene: ${context.gameState?.currentScene || "Unknown"}
+
+Based on this interaction, create a SHORT side quest (2-3 objectives) that:
+- Stems naturally from the conversation or discovery
+- Can be completed independently of main story
+- Is appropriate for the player's level
+- Has a clear but vague objective
+
+Format as JSON:
+{
+  "title": "Short, punchy quest title",
+  "description": "Vague objective (what to do, not how)",
+  "status": "active",
+  "priority": "normal",
+  "progress": 0,
+  "maxProgress": 2,
+  "reward": "Appropriate reward",
+  "isMainStory": false
+}`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+
+      if (result.title) {
+        console.log('[AI Service] Side quest generated', {
+          title: result.title,
+          description: result.description.substring(0, 100)
+        });
+
+        return {
+          title: result.title,
+          description: result.description,
+          status: 'active',
+          priority: result.priority || 'normal',
+          progress: 0,
+          maxProgress: result.maxProgress || 2,
+          reward: result.reward,
+          isMainStory: false,
+          parentQuestId: null,
+          chainId: null
+        };
+      }
+
+      return null;
+
+    } catch (error) {
+      console.error('[AI Service] Error generating side quest:', error);
+      captureError(error as Error, { context: "Side quest generation" });
       return null;
     }
   }
