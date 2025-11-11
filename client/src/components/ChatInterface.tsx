@@ -330,7 +330,7 @@ ${JSON.stringify(debugInfo, null, 2)}
 
         {/* Messages - flexible height */}
         <div className="flex-1 overflow-auto px-4 sm:px-6 py-4" ref={scrollRef}>
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-3 sm:space-y-4 max-w-full">
               {messages.length === 0 ? (
                 <EmptyState
                   icon={MessageSquare}
@@ -343,17 +343,17 @@ ${JSON.stringify(debugInfo, null, 2)}
                   const isPlayer = message.sender === "player";
 
                   return (
-                    <div key={message.id} className="space-y-1.5">
+                    <div key={message.id} className="space-y-1.5 max-w-full">
                       <div className="flex items-center gap-2">
                         {getSenderBadge(message.sender, message.senderName)}
                         <span className="text-xs text-muted-foreground">{message.timestamp}</span>
                       </div>
-                      <div className={`p-2.5 sm:p-3 rounded-lg ${
+                      <div className={`p-2.5 sm:p-3 rounded-lg max-w-full overflow-hidden ${
                         isPlayer
                           ? "bg-primary/10 border-l-4 border-primary ml-2 sm:ml-4"
                           : "bg-muted/50"
                       }`}>
-                        <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">{text}</p>
+                        <p className="text-sm leading-relaxed text-foreground whitespace-pre-line break-words">{text}</p>
 
                         {/* Render clickable options for DM/NPC messages */}
                         {!isPlayer && options.length > 0 && (
@@ -364,7 +364,7 @@ ${JSON.stringify(debugInfo, null, 2)}
                                 key={index}
                                 variant="outline"
                                 size="sm"
-                                className="w-full justify-start text-left h-auto py-2.5 px-3 min-h-[44px]"
+                                className="w-full justify-start text-left h-auto py-2.5 px-3 min-h-[44px] whitespace-normal"
                                 onClick={() => {
                                   console.log('[ChatInterface] Quick action option clicked', {
                                     option: option.substring(0, 50)
@@ -377,7 +377,7 @@ ${JSON.stringify(debugInfo, null, 2)}
                                 }}
                                 disabled={isLoading}
                               >
-                                <span className="text-sm leading-snug">{option}</span>
+                                <span className="text-sm leading-snug break-words">{option}</span>
                               </Button>
                             ))}
                           </div>
