@@ -4,10 +4,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "./PageHeader";
 import EmptyState from "./EmptyState";
-import { Mic, MicOff, Send, MessageSquare, Loader2, XCircle } from "lucide-react";
-import type { Message } from "@shared/schema";
+import { Mic, MicOff, Send, MessageSquare, Loader2, XCircle, Bug } from "lucide-react";
+import type { Message, Character, Quest, Item, GameState } from "@shared/schema";
 import { useState, useRef, useEffect } from "react";
 import { analytics } from "@/lib/posthog";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -17,6 +18,10 @@ interface ChatInterfaceProps {
   isLoading?: boolean;
   className?: string;
   onEndAdventure?: () => void;
+  character?: Character;
+  quests?: Quest[];
+  items?: Item[];
+  gameState?: GameState;
 }
 
 // Helper function to parse message content and extract options
@@ -49,11 +54,16 @@ export default function ChatInterface({
   onToggleListening,
   isLoading = false,
   className = "",
-  onEndAdventure
+  onEndAdventure,
+  character,
+  quests = [],
+  items = [],
+  gameState
 }: ChatInterfaceProps) {
   const [inputText, setInputText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-  
+  const { toast } = useToast();
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -86,6 +96,90 @@ export default function ChatInterface({
     });
     onToggleListening?.();
   };
+
+  const handleCopyDebugInfo = () => {
+    console.log('[ChatInterface] Copy Debug Info button clicked');
+    analytics.buttonClicked('Copy Debug Info', 'Chat Interface');
+
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      character: character ? {
+        id: character.id,
+        name: character.name,
+        level: character.level,
+        class: character.class,
+        currentHealth: character.currentHealth,
+        maxHealth: character.maxHealth
+      } : null,
+      gameState: gameState ? {
+        currentScene: gameState.currentScene,
+        inCombat: gameState.inCombat,
+        combatId: gameState.combatId
+      } : null,
+      quests: quests.map(q => ({
+        id: q.id,
+        title: q.title,
+        status: q.status,
+        progress: `${q.progress}/${q.maxProgress}`
+      })),
+      items: items.map(i => ({
+        id: i.id,
+        name: i.name,
+        type: i.type,
+        quantity: i.quantity
+      })),
+      recentMessages: messages.slice(-10).map(m => ({
+        id: m.id,
+        sender: m.sender,
+        content: m.content.substring(0, 200) + (m.content.length > 200 ? '...' : ''),
+        timestamp: m.timestamp
+      }))
+    };
+
+    const debugText = `STORY MODE - Debug Info
+Generated: ${debugInfo.timestamp}
+
+CHARACTER:
+${debugInfo.character ? `- ID: ${debugInfo.character.id}
+- Name: ${debugInfo.character.name}
+- Level ${debugInfo.character.level} ${debugInfo.character.class}
+- HP: ${debugInfo.character.currentHealth}/${debugInfo.character.maxHealth}` : 'No character'}
+
+GAME STATE:
+${debugInfo.gameState ? `- Scene: ${debugInfo.gameState.currentScene}
+- In Combat: ${debugInfo.gameState.inCombat}` : 'No game state'}
+
+QUESTS (${debugInfo.quests.length}):
+${debugInfo.quests.map(q => `- [${q.status.toUpperCase()}] ${q.title} (${q.progress})`).join('\n') || 'None'}
+
+ITEMS (${debugInfo.items.length}):
+${debugInfo.items.slice(0, 5).map(i => `- ${i.name} (${i.type}) x${i.quantity}`).join('\n') || 'None'}
+
+RECENT MESSAGES (Last 10):
+${debugInfo.recentMessages.map((m, i) => `${i + 1}. [${m.sender}] ${m.content}`).join('\n\n')}
+
+=== RAW JSON ===
+${JSON.stringify(debugInfo, null, 2)}
+`;
+
+    navigator.clipboard.writeText(debugText).then(() => {
+      console.log('[ChatInterface] Debug info copied to clipboard');
+      toast({
+        title: "Debug info copied!",
+        description: "Paste this into your support ticket or browser console.",
+        duration: 3000,
+      });
+    }).catch((err) => {
+      console.error('[ChatInterface] Failed to copy debug info:', err);
+      toast({
+        title: "Copy failed",
+        description: "Please check browser console for debug info.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      console.log('[ChatInterface] Debug info (manual copy):', debugText);
+    });
+  };
   
   const getSenderBadge = (sender: string, senderName?: string | null) => {
     switch (sender) {
@@ -104,17 +198,35 @@ export default function ChatInterface({
         <PageHeader
           title="Your Story"
           subtitle="Chat with your narrator and characters"
-          action={{
-            label: "End Story",
-            onClick: () => {
+        />
+
+        {/* Action buttons row */}
+        <div className="px-4 sm:px-6 pb-3 flex gap-2 border-b">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyDebugInfo}
+            className="flex-1 sm:flex-none"
+          >
+            <Bug className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Copy Debug Info</span>
+            <span className="sm:hidden">Debug</span>
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
               console.log('[ChatInterface] End Story button clicked');
               analytics.buttonClicked('End Story', 'Chat Interface');
               onEndAdventure?.();
-            },
-            icon: XCircle,
-            variant: "destructive"
-          }}
-        />
+            }}
+            className="flex-1 sm:flex-none"
+          >
+            <XCircle className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">End Story</span>
+            <span className="sm:hidden">End</span>
+          </Button>
+        </div>
 
         {/* Messages - flexible height */}
         <div className="flex-1 overflow-auto px-4 sm:px-6 py-4" ref={scrollRef}>

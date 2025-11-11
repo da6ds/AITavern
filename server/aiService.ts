@@ -208,6 +208,13 @@ Remember: Keep responses engaging but focused. Always give players clear options
         messageCount: context.recentMessages.length
       });
 
+      // Log recent message chain for debugging conversation flow
+      console.log('[AI Service] === MESSAGE HISTORY ===');
+      context.recentMessages.forEach((msg, idx) => {
+        console.log(`[${idx + 1}/${context.recentMessages.length}] ${msg.sender} (ID: ${msg.id}): ${msg.content.substring(0, 100)}...`);
+      });
+      console.log('[AI Service] === END MESSAGE HISTORY ===');
+
       const contextPrompt = this.createContextPrompt(context);
 
       const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -276,6 +283,13 @@ Example Quest Actions:
         userPromptLength: messages[1].content?.toString().length || 0
       });
 
+      // Log full prompts for debugging (truncated for readability)
+      console.log('[AI Service] === RAW PROMPT (System) ===');
+      console.log(this.getSystemPrompt().substring(0, 500) + '...');
+      console.log('[AI Service] === RAW PROMPT (User) ===');
+      console.log(messages[1].content?.toString().substring(0, 1000) + '...');
+      console.log('[AI Service] === END RAW PROMPTS ===');
+
       const response = await openai.chat.completions.create({
         model: "anthropic/claude-3.5-haiku",
         messages,
@@ -326,6 +340,11 @@ Example Quest Actions:
           contentLength: rawContent.length,
           contentPreview: rawContent.substring(0, 200)
         });
+
+        // Log full raw response for debugging
+        console.log('[AI Service] === RAW AI RESPONSE ===');
+        console.log(rawContent);
+        console.log('[AI Service] === END RAW RESPONSE ===');
 
         // Try to parse the JSON, which may contain control characters
         aiResponse = JSON.parse(rawContent);

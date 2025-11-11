@@ -432,6 +432,10 @@ function GameApp() {
             isListening={isListening}
             onToggleListening={handleToggleListening}
             isLoading={aiChatMutation.isPending}
+            character={character}
+            quests={quests}
+            items={items}
+            gameState={gameState}
             onEndAdventure={handleEndAdventure}
             className="h-full"
           />
